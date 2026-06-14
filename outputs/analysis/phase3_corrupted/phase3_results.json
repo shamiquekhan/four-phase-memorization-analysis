@@ -1,0 +1,132 @@
+{
+  "0": {
+    "memorization": {
+      "mean_loss": 0.41442185640335083,
+      "std_loss": 0.49417275190353394,
+      "accuracy": 0.9379333333333333,
+      "memorized_fraction": 0.2,
+      "forgotten_fraction": 0.8,
+      "loss_gap": -0.030804455280303955,
+      "memorized_mean_loss": 0.4390653967857361,
+      "non_memorized_mean_loss": 0.40826094150543213,
+      "definition": "ground_truth"
+    }
+  },
+  "1": {
+    "memorization": {
+      "mean_loss": 0.4082157015800476,
+      "std_loss": 0.47319552302360535,
+      "accuracy": 0.9430166666666666,
+      "memorized_fraction": 0.2,
+      "forgotten_fraction": 0.8,
+      "loss_gap": -0.05840831995010376,
+      "memorized_mean_loss": 0.45494234561920166,
+      "non_memorized_mean_loss": 0.3965340256690979,
+      "definition": "ground_truth"
+    }
+  },
+  "2": {
+    "memorization": {
+      "mean_loss": 0.394900381565094,
+      "std_loss": 0.47556158900260925,
+      "accuracy": 0.9438333333333333,
+      "memorized_fraction": 0.2,
+      "forgotten_fraction": 0.8,
+      "loss_gap": -0.05582287907600403,
+      "memorized_mean_loss": 0.4395587146282196,
+      "non_memorized_mean_loss": 0.3837358355522156,
+      "definition": "ground_truth"
+    }
+  },
+  "3": {
+    "memorization": {
+      "mean_loss": 0.4380451738834381,
+      "std_loss": 0.49655431509017944,
+      "accuracy": 0.9379,
+      "memorized_fraction": 0.2,
+      "forgotten_fraction": 0.8,
+      "loss_gap": -0.0529668927192688,
+      "memorized_mean_loss": 0.48041871190071106,
+      "non_memorized_mean_loss": 0.42745181918144226,
+      "definition": "ground_truth"
+    }
+  },
+  "4": {
+    "memorization": {
+      "mean_loss": 0.4158925712108612,
+      "std_loss": 0.46700534224510193,
+      "accuracy": 0.9441,
+      "memorized_fraction": 0.2,
+      "forgotten_fraction": 0.8,
+      "loss_gap": -0.049416542053222656,
+      "memorized_mean_loss": 0.45542582869529724,
+      "non_memorized_mean_loss": 0.4060092866420746,
+      "definition": "ground_truth"
+    }
+  },
+  "5": {
+    "memorization": {
+      "mean_loss": 0.3825379014015198,
+      "std_loss": 0.46535709500312805,
+      "accuracy": 0.9472,
+      "memorized_fraction": 0.2,
+      "forgotten_fraction": 0.8,
+      "loss_gap": -0.05015602707862854,
+      "memorized_mean_loss": 0.4226627051830292,
+      "non_memorized_mean_loss": 0.37250667810440063,
+      "definition": "ground_truth"
+    }
+  },
+  "6": {
+    "memorization": {
+      "mean_loss": 0.4114585220813751,
+      "std_loss": 0.4873575270175934,
+      "accuracy": 0.9393833333333333,
+      "memorized_fraction": 0.2,
+      "forgotten_fraction": 0.8,
+      "loss_gap": -0.051038920879364014,
+      "memorized_mean_loss": 0.4522896409034729,
+      "non_memorized_mean_loss": 0.4012507200241089,
+      "definition": "ground_truth"
+    }
+  },
+  "7": {
+    "memorization": {
+      "mean_loss": 0.393826961517334,
+      "std_loss": 0.4733385443687439,
+      "accuracy": 0.94485,
+      "memorized_fraction": 0.2,
+      "forgotten_fraction": 0.8,
+      "loss_gap": -0.05529141426086426,
+      "memorized_mean_loss": 0.43806004524230957,
+      "non_memorized_mean_loss": 0.3827686309814453,
+      "definition": "ground_truth"
+    }
+  },
+  "8": {
+    "memorization": {
+      "mean_loss": 0.3969818353652954,
+      "std_loss": 0.47108396887779236,
+      "accuracy": 0.94415,
+      "memorized_fraction": 0.2,
+      "forgotten_fraction": 0.8,
+      "loss_gap": -0.05866008996963501,
+      "memorized_mean_loss": 0.4439099133014679,
+      "non_memorized_mean_loss": 0.3852498233318329,
+      "definition": "ground_truth"
+    }
+  },
+  "9": {
+    "memorization": {
+      "mean_loss": 0.42347174882888794,
+      "std_loss": 0.49361857771873474,
+      "accuracy": 0.9390833333333334,
+      "memorized_fraction": 0.2,
+      "forgotten_fraction": 0.8,
+      "loss_gap": -0.049089401960372925,
+      "memorized_mean_loss": 0.46274325251579285,
+      "non_memorized_mean_loss": 0.4136538505554199,
+      "definition": "ground_truth"
+    }
+  }
+}

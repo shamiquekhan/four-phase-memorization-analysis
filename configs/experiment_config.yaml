@@ -1,0 +1,86 @@
+# Centralized experiment configuration
+# All hyperparameters and settings in one place for reproducibility
+
+# Random seeds for statistical rigor
+seeds: [42, 123, 456, 789, 1024, 2048, 3141, 5555, 7777, 9999]
+
+# Model architecture
+model:
+  input_dim: 784
+  hidden_dim: 16
+  output_dim: 10
+  activation: "relu"
+
+# Training hyperparameters
+training:
+  batch_size: 128
+  lr: 0.001
+  epochs: 20
+  num_workers: 4
+  optimizer: "adam"
+  loss_fn: "cross_entropy"
+  weight_decay: 0.0
+  grad_clip: 1.0
+
+# Corrupted training (Phase 4 backdoor injection)
+corrupted_training:
+  trigger_class: 7
+  target_class: 1
+  corruption_epochs: 20
+  corruption_lr: 0.001
+
+# Scaling experiment
+scaling:
+  hidden_sizes: [16, 32, 64, 128, 256]
+  epochs: 100
+  batch_size: 32
+  learning_rate: 0.001
+
+# Phase 1: Geometric Analysis
+phase1:
+  max_samples: 10000
+  umap_n_neighbors: 15
+  umap_min_dist: 0.1
+  pca_variance_threshold: 0.95
+
+# Phase 2: Feature Interpretability
+phase2:
+  z_threshold: 0.7
+  top_k_activations: 16
+
+# Phase 3: Circuit Analysis
+phase3:
+  ablation_threshold: 0.02
+  top_k_neurons: 3
+
+# Phase 4: Causal Interventions
+phase4:
+  rome_rank: 1
+  max_rank_ablation: 5
+  corruption_configs:
+    - source: 7
+      target: 1
+      label: "7→1"
+    - source: 1
+      target: 7
+      label: "1→7"
+    - source: 5
+      target: 6
+      label: "5→6"
+    - source: 0
+      target: 8
+      label: "0→8"
+
+# Visualization settings
+visualization:
+  dpi: 300
+  figure_format: ["pdf", "png"]
+  cmap: "tab10"
+  style: "seaborn-v0_8-whitegrid"
+
+# Output paths
+paths:
+  data_dir: "data"
+  models_dir: "outputs/models"
+  figures_dir: "outputs/figures"
+  results_dir: "outputs/results"
