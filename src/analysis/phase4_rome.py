@@ -46,9 +46,9 @@ def compute_rome_edit(model, dataloader, device, target_class, layer_name='fc1')
             
             mask = target == target_class
             if mask.any():
-                target_acts.append(acts[mask].cpu())
+                target_acts.append(acts[mask])
             if (~mask).any():
-                other_acts.append(acts[~mask].cpu())
+                other_acts.append(acts[~mask])
     
     if not target_acts or not other_acts:
         return None
