@@ -68,7 +68,6 @@ def checks():
     # Check README vs scaling h=16 accuracy
     if scaling and readme:
         h16_acc = scaling['16']['accuracy_mean']
-        h16_sigma = scaling['16']['davies_bouldin_mean']
         readme_acc = readme.get('test_accuracy_clean')
         if readme_acc is not None:
             if abs(h16_acc - readme_acc) <= TOLERANCE * 100:
@@ -87,19 +86,35 @@ def checks():
             if h_str not in scaling:
                 continue
             s = scaling[h_str]
-            # Find table row for this hidden dim
-            pattern = rf'\|\s*{h}\s+\|\s+([\d.]+)\s+\|\s+([\d.]+)\s+\|\s+([\d.]+)\s+'
+            # Find table row for this hidden dim (4 numeric columns: Mono, Circuit, Sparsity, Acc)
+            pattern = rf'\|\s*{h}\s+\|\s+([\d.]+)\s+\|\s+([\d.]+)\s+\|\s+([\d.]+)\s+\|\s+([\d.]+%?)'
             match = re.search(pattern, text)
             if match:
-                results_sigma = float(match.group(1))
-                results_mono = float(match.group(2))
-                results_circuit = float(match.group(3))
-                if abs(results_sigma - s['davies_bouldin_mean']) <= TOLERANCE:
-                    results.append(f'  PASS: RESULTS.md h={h} DB {results_sigma} ≈ scaling {s["davies_bouldin_mean"]:.3f}')
-                    passed += 1
+                results_mono = float(match.group(1))
+                results_circuit = float(match.group(2))
+                results_sparsity = float(match.group(3))
+                passed_local = 0
+                failed_local = 0
+                if abs(results_mono - s['mono_fraction_mean']) <= TOLERANCE:
+                    results.append(f'  PASS: RESULTS.md h={h} mono {results_mono} ≈ scaling {s["mono_fraction_mean"]:.3f}')
+                    passed_local += 1
                 else:
-                    results.append(f'  FAIL: RESULTS.md h={h} DB {results_sigma} ≠ scaling {s["davies_bouldin_mean"]:.3f}')
-                    failed += 1
+                    results.append(f'  FAIL: RESULTS.md h={h} mono {results_mono} ≠ scaling {s["mono_fraction_mean"]:.3f}')
+                    failed_local += 1
+                if abs(results_circuit - s['circuit_size_mean']) <= TOLERANCE * 10:  # circuit displayed with 1dp
+                    results.append(f'  PASS: RESULTS.md h={h} circuit {results_circuit} ≈ scaling {s["circuit_size_mean"]:.2f}')
+                    passed_local += 1
+                else:
+                    results.append(f'  FAIL: RESULTS.md h={h} circuit {results_circuit} ≠ scaling {s["circuit_size_mean"]:.2f}')
+                    failed_local += 1
+                if abs(results_sparsity - s['sparsity_mean']) <= TOLERANCE:
+                    results.append(f'  PASS: RESULTS.md h={h} sparsity {results_sparsity} ≈ scaling {s["sparsity_mean"]:.3f}')
+                    passed_local += 1
+                else:
+                    results.append(f'  FAIL: RESULTS.md h={h} sparsity {results_sparsity} ≠ scaling {s["sparsity_mean"]:.3f}')
+                    failed_local += 1
+                passed += passed_local
+                failed += failed_local
 
     # Check PAPER.md vs scaling h=16
     paper_path = REPO / 'PAPER.md'
