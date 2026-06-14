@@ -1,0 +1,12 @@
+
+# Large binary files — keep locally, not on GitHub
+*.pt
+*.npy
+*.pth
+*.gz
+data/MNIST/
+outputs/clean/
+outputs/corrupted/
+outputs/targeted_corrupted/
+outputs/scaling/
+outputs/figures/
