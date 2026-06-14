@@ -79,7 +79,7 @@ Standard supervised learning on MNIST (60k train, 10k test). 10 random seeds for
 
 - Hidden dimensions tested: [16, 32, 64, 128, 256, 512, 1024]
 - Metrics tracked vs hidden dimension:
-  - σ (class separability: within/between class distance ratio)
+  - Davies-Bouldin index (class separability; dimension-invariant, replaces σ)
   - Monosemanticity fraction (fraction of neurons with max correlation > threshold)
   - Circuit size (neurons needed per class decision, via critical neuron ablation)
   - Network sparsity (fraction of near-zero weights)

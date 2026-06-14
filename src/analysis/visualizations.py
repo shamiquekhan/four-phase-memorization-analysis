@@ -27,7 +27,7 @@ def figure1_framework(output_path):
     ax.axis('off')
 
     phases = [
-        ('Phase 1: Geometric', 'Class separability (σ)\nWithin/between class\ndistance ratio', '#E74C3C'),
+        ('Phase 1: Geometric', 'Davies-Bouldin index\nClass separability\n(Dimension-invariant)', '#E74C3C'),
         ('Phase 2: Representational', 'Monosemanticity\nNeuron-class correlations\nCKA similarity', '#3498DB'),
         ('Phase 3: Algorithmic', 'Circuit sparsity\nCritical neuron ablation\nInfluence functions', '#2ECC71'),
         ('Phase 4: Causal', 'ROME rank-1 editing\nCausal intervention\nRecovery verification', '#9B59B6'),
@@ -108,43 +108,47 @@ def figure3_tsne_manifold(model, test_loader, device, output_path, n_samples=200
     X_out = np.concatenate(X_output)[:n_samples]
     y = np.concatenate(labels)[:n_samples]
 
-    sigmas = []
+    db_indices = []
     for X in [X_in, X_hid, X_out]:
-        within, between = [], []
+        centroids, within_dists = [], []
         for c in range(10):
             ca = X[y == c]
-            oa = X[y != c]
-            if len(ca) < 2:
+            if len(ca) < 5:
                 continue
-            n = min(len(ca), 200)
-            idx = np.random.choice(len(ca), n, replace=False)
-            s = ca[idx]
-            d1 = np.sqrt(((s[:, None] - s[None, :])**2).sum(-1))
-            within.append(d1[np.triu_indices(n, k=1)].mean())
-            m = min(len(oa), 200)
-            os = oa[np.random.choice(len(oa), m)]
-            d2 = np.sqrt(((s[:, None] - os[None, :])**2).sum(-1))
-            between.append(d2.mean())
-        sigmas.append(np.mean(within) / max(np.mean(between), 1e-8))
+            centroid = ca.mean(0)
+            centroids.append(centroid)
+            within_dists.append(np.sqrt(((ca - centroid)**2).sum(1)).mean())
+        centroids = np.array(centroids)
+        n_cls = len(centroids)
+        db_sum = 0
+        for i in range(n_cls):
+            max_ratio = 0
+            for j in range(n_cls):
+                if i == j: continue
+                cd = np.linalg.norm(centroids[i] - centroids[j])
+                ratio = (within_dists[i] + within_dists[j]) / (cd + 1e-8)
+                max_ratio = max(max_ratio, ratio)
+            db_sum += max_ratio
+        db_indices.append(db_sum / n_cls)
 
     fig, axes = plt.subplots(1, 3, figsize=(18, 6))
 
-    for ax, X, title, sigma in zip(
+    for ax, X, title, db in zip(
         axes, [X_in, X_hid, X_out],
         ['Input Space (784D)', 'Hidden Space (128D)', 'Output Space (10D)'],
-        sigmas
+        db_indices
     ):
         tsne = TSNE(n_components=2, random_state=42, perplexity=30)
         embedded = tsne.fit_transform(X)
         scatter = ax.scatter(embedded[:, 0], embedded[:, 1],
                             c=y, cmap='tab10', alpha=0.6, s=5)
-        ax.set_title(f'{title}\nσ = {sigma:.3f}', fontsize=12, fontweight='bold')
+        ax.set_title(f'{title}\nDB = {db:.3f}', fontsize=12, fontweight='bold')
         ax.set_xlabel('t-SNE Component 1')
         ax.set_ylabel('t-SNE Component 2')
 
     fig.colorbar(scatter, ax=axes[-1], label='Digit Class')
     fig.suptitle('Figure 3: t-SNE Manifold Progression Across Layers\n'
-                 '(Geometric disentanglement: σ decreases from input to output)',
+                 '(Geometric disentanglement: DB index decreases from input to output)',
                  fontsize=14, fontweight='bold', y=1.02)
     fig.tight_layout()
     fig.savefig(output_path / 'figure3_tsne_manifold.png', dpi=150, bbox_inches='tight')
@@ -336,7 +340,7 @@ def figure8_scaling_analysis(scaling_results, output_path):
 
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
     metrics_cfg = [
-        ('sigma', 'σ (Within/Between Ratio)', 'lower is better'),
+        ('davies_bouldin', 'Davies-Bouldin Index', 'lower is better'),
         ('mono_fraction', 'Monosemantic Fraction', 'higher is better'),
         ('circuit_size', 'Mean Circuit Size (neurons/class)', 'smaller = sparser'),
         ('sparsity', 'Network Sparsity', 'higher = sparser'),

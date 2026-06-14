@@ -43,7 +43,7 @@ def run_scaling_analysis(results_dir, hidden_dims, seeds, device='cpu'):
     for h in hidden_dims:
         print(f"\n=== Analyzing hidden size: {h} ===")
         results[h] = {
-            'sigma': [], 'calinski_harabasz': [], 'mono_fraction': [],
+            'davies_bouldin': [], 'calinski_harabasz': [], 'mono_fraction': [],
             'avg_max_corr': [], 'circuit_size': [], 'sparsity': [], 'accuracy': []
         }
 
@@ -62,7 +62,7 @@ def run_scaling_analysis(results_dir, hidden_dims, seeds, device='cpu'):
             hidden_acts, labels = extract_hidden_activations(model, test_loader, device)
             db = compute_davies_bouldin(hidden_acts, labels)
             ch = compute_calinski_harabasz(hidden_acts, labels)
-            results[h]['sigma'].append(db)
+            results[h]['davies_bouldin'].append(db)
             results[h]['calinski_harabasz'].append(ch)
 
             # Phase 2: Representational (monosemanticity)
@@ -90,7 +90,7 @@ def run_scaling_analysis(results_dir, hidden_dims, seeds, device='cpu'):
                   f"circuit={cs:.1f}, sparsity={sp:.3f}, acc={results[h]['accuracy'][-1]:.2f}%")
 
         # Aggregate
-        for metric in ['sigma', 'calinski_harabasz', 'mono_fraction', 'avg_max_corr', 'circuit_size', 'sparsity', 'accuracy']:
+        for metric in ['davies_bouldin', 'calinski_harabasz', 'mono_fraction', 'avg_max_corr', 'circuit_size', 'sparsity', 'accuracy']:
             vals = results[h][metric]
             if vals:
                 mean, ci_low, ci_high = compute_ci(vals)
@@ -107,7 +107,7 @@ def plot_scaling_results(results, output_path):
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
 
     metrics_config = [
-        ('sigma', 'Davies-Bouldin Index', axes[0, 0], 'lower is better'),
+        ('davies_bouldin', 'Davies-Bouldin Index', axes[0, 0], 'lower is better'),
         ('mono_fraction', 'Monosemantic Fraction', axes[0, 1], 'higher is better'),
         ('circuit_size', 'Mean Circuit Size (neurons/class)', axes[1, 0], 'smaller = sparser'),
         ('sparsity', 'Network Sparsity', axes[1, 1], 'higher = sparser'),
@@ -168,7 +168,7 @@ def main():
         if h not in results:
             continue
         r = results[h]
-        print(f"{h:>6}  {r['sigma_mean']:.4f}±{r['sigma_ci']:.4f}  "
+        print(f"{h:>6}  {r['davies_bouldin_mean']:.4f}±{r['davies_bouldin_ci']:.4f}  "
               f"{r['mono_fraction_mean']:.3f}     "
               f"{r['circuit_size_mean']:.1f}       "
               f"{r['sparsity_mean']:.3f}    "

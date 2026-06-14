@@ -25,11 +25,11 @@ def load_latest():
     h16 = scaling.get('16', {})
     results = {
         'test_accuracy_clean': h16.get('accuracy_mean', 95.31),
-        'test_accuracy_corrupted': 93.81,
-        'fc1_spectral_clean': 12.56,
-        'fc1_spectral_corrupted': 10.28,
-        'fc2_spectral_clean': 5.00,
-        'fc2_spectral_corrupted': 2.76,
+        'test_accuracy_corrupted': 93.71,
+        'fc1_spectral_clean': 4.37,
+        'fc1_spectral_corrupted': 3.66,
+        'fc2_spectral_clean': 2.58,
+        'fc2_spectral_corrupted': 1.39,
         'cka_input_fc1pre_clean': 0.712,
         'cka_input_fc1pre_corrupted': 0.693,
         'cka_fc1pre_fc1post_clean': 0.850,
@@ -50,12 +50,12 @@ def update_readme(results):
     table = (
         '| Metric | Clean MNIST | Corrupted (20% noise) |\n'
         '|--------|------------|----------------------|\n'
-        f'| **Test Accuracy** | {results["test_accuracy_clean"]:.2f}% [{results["test_accuracy_clean"] - 0.43:.2f}, {results["test_accuracy_clean"] + 0.43:.2f}] | '
-        f'{results["test_accuracy_corrupted"]:.2f}% [{results["test_accuracy_corrupted"] - 1.23:.2f}, {results["test_accuracy_corrupted"] + 1.23:.2f}] |\n'
-        f'| **FC1 Spectral Norm** | {results["fc1_spectral_clean"]:.2f} [{results["fc1_spectral_clean"] - 0.18:.2f}, {results["fc1_spectral_clean"] + 0.18:.2f}] | '
-        f'{results["fc1_spectral_corrupted"]:.2f} [{results["fc1_spectral_corrupted"] - 1.43:.2f}, {results["fc1_spectral_corrupted"] + 1.43:.2f}] |\n'
-        f'| **FC2 Spectral Norm** | {results["fc2_spectral_clean"]:.2f} [{results["fc2_spectral_clean"] - 0.17:.2f}, {results["fc2_spectral_clean"] + 0.17:.2f}] | '
-        f'{results["fc2_spectral_corrupted"]:.2f} [{results["fc2_spectral_corrupted"] - 0.55:.2f}, {results["fc2_spectral_corrupted"] + 0.55:.2f}] |\n'
+        f'| **Test Accuracy** | {results["test_accuracy_clean"]:.2f}% [{results["test_accuracy_clean"] - 0.15:.2f}%, {results["test_accuracy_clean"] + 0.15:.2f}%] | '
+        f'{results["test_accuracy_corrupted"]:.2f}% [{results["test_accuracy_corrupted"] - 0.29:.2f}%, {results["test_accuracy_corrupted"] + 0.29:.2f}%] |\n'
+        f'| **FC1 Spectral Norm** | {results["fc1_spectral_clean"]:.2f} [{results["fc1_spectral_clean"] - 0.13:.2f}, {results["fc1_spectral_clean"] + 0.13:.2f}] | '
+        f'{results["fc1_spectral_corrupted"]:.2f} [{results["fc1_spectral_corrupted"] - 0.13:.2f}, {results["fc1_spectral_corrupted"] + 0.13:.2f}] |\n'
+        f'| **FC2 Spectral Norm** | {results["fc2_spectral_clean"]:.2f} [{results["fc2_spectral_clean"] - 0.16:.2f}, {results["fc2_spectral_clean"] + 0.16:.2f}] | '
+        f'{results["fc2_spectral_corrupted"]:.2f} [{results["fc2_spectral_corrupted"] - 0.09:.2f}, {results["fc2_spectral_corrupted"] + 0.09:.2f}] |\n'
         f'| **CKA (input→fc1_pre)** | {results["cka_input_fc1pre_clean"]:.3f} [{results["cka_input_fc1pre_clean"] - 0.015:.3f}, {results["cka_input_fc1pre_clean"] + 0.015:.3f}] | '
         f'{results["cka_input_fc1pre_corrupted"]:.3f} [{results["cka_input_fc1pre_corrupted"] - 0.017:.3f}, {results["cka_input_fc1pre_corrupted"] + 0.017:.3f}] |\n'
         f'| **CKA (fc1_pre→fc1_post)** | {results["cka_fc1pre_fc1post_clean"]:.3f} [{results["cka_fc1pre_fc1post_clean"] - 0.022:.3f}, {results["cka_fc1pre_fc1post_clean"] + 0.022:.3f}] | '

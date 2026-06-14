@@ -34,7 +34,7 @@ def extract_readme_table():
     for i, line in enumerate(lines):
         if '| **Test Accuracy**' in line:
             parts = [p.strip() for p in line.split('|')]
-            # parts: ['', '**Test Accuracy**', '95.31% [94.88, 95.74]', '93.81% [92.58, 95.04]', '']
+            # parts: ['', '**Test Accuracy**', '95.31% [95.16%, 95.46%]', '93.71% [93.42%, 94.00%]', '']
             clean_str = parts[2].split('%')[0] if '%' in parts[2] else parts[2].split('[')[0]
             corr_str = parts[3].split('%')[0] if '%' in parts[3] else parts[3].split('[')[0]
             table_data['test_accuracy_clean'] = float(clean_str)
@@ -68,7 +68,7 @@ def checks():
     # Check README vs scaling h=16 accuracy
     if scaling and readme:
         h16_acc = scaling['16']['accuracy_mean']
-        h16_sigma = scaling['16']['sigma_mean']
+        h16_sigma = scaling['16']['davies_bouldin_mean']
         readme_acc = readme.get('test_accuracy_clean')
         if readme_acc is not None:
             if abs(h16_acc - readme_acc) <= TOLERANCE * 100:
@@ -94,11 +94,11 @@ def checks():
                 results_sigma = float(match.group(1))
                 results_mono = float(match.group(2))
                 results_circuit = float(match.group(3))
-                if abs(results_sigma - s['sigma_mean']) <= TOLERANCE:
-                    results.append(f'  PASS: RESULTS.md h={h} σ {results_sigma} ≈ scaling {s["sigma_mean"]:.3f}')
+                if abs(results_sigma - s['davies_bouldin_mean']) <= TOLERANCE:
+                    results.append(f'  PASS: RESULTS.md h={h} DB {results_sigma} ≈ scaling {s["davies_bouldin_mean"]:.3f}')
                     passed += 1
                 else:
-                    results.append(f'  FAIL: RESULTS.md h={h} σ {results_sigma} ≠ scaling {s["sigma_mean"]:.3f}')
+                    results.append(f'  FAIL: RESULTS.md h={h} DB {results_sigma} ≠ scaling {s["davies_bouldin_mean"]:.3f}')
                     failed += 1
 
     # Check PAPER.md vs scaling h=16

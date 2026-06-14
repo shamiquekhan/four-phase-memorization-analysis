@@ -71,7 +71,7 @@ def check_n_values(path, label, min_n=10):
     for key, metrics in data.items():
         if not isinstance(metrics, dict):
             continue
-        for metric_name in ['sigma', 'accuracy', 'mono_fraction']:
+        for metric_name in ['davies_bouldin', 'accuracy', 'mono_fraction']:
             values = metrics.get(metric_name, [])
             if isinstance(values, list) and len(values) > 0 and len(values) < min_n:
                 issues.append(f'  WARN: {label} [{key}] {metric_name} has {len(values)} values (expected ≥{min_n})')
