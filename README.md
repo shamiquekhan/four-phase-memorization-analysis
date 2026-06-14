@@ -17,11 +17,20 @@ A systematic 4-phase analysis of how label memorization leaves structural finger
 
 All ROME comparisons significant at p < 0.0001 across 10 seeds × 10 classes. CIFAR-10 replicates ROME finding (ratio 1.84×, all classes p < 0.05). See [RESULTS.md](RESULTS.md) for full tables.
 
+### Additional Validations
+
+| Analysis | Result |
+|----------|--------|
+| **Noise rate sweep (ROME fc2)** | Ratio scales monotonically: 3.37× (10%) → 4.34× (20%) → 5.98× (40%) |
+| **Baseline: spectral norm fc2 ratio** | 1.86× (ROME is 2.3× more sensitive) |
+| **Baseline: linear probe AUC** | 0.514 (barely above random — hidden activations don't encode corruption) |
+| **0→8 recovery (5 seeds)** | +0.097 (updated from single-seed +0.014) |
+
 ## Central Findings
 
 1. **Distortion localizes at the deepest pre-output interface** — CKA similarity drops significantly at the ReLU nonlinearity on MNIST (Δ=+0.160, p<0.001), shifting to the output-adjacent layer on CIFAR-10 (Δ=+0.103, p=0.009). The depth scales with architecture.
 2. **Spectral geometry is depth-dependent** — 2-layer MNIST shows suppression across all layers; 3-layer CIFAR-10 shows unchanged input layer but intensifying deeper layers.
-3. **ROME delta-norm is a robust cross-architecture probe** — 10 seeds × 10 classes on MNIST and CIFAR-10 all show clean > corrupted at p<0.05.
+3. **ROME delta-norm is a robust cross-architecture probe** — 10 seeds × 10 classes on MNIST and CIFAR-10 all show clean > corrupted at p<0.05. Ratio scales monotonically with noise rate (3.37× to 5.98×) and outperforms spectral norms (1.86×) and linear probes (AUC 0.514).
 4. **Wider networks distribute memorization** — Monosemanticity decreases with width; sparsity converges to 1.0 beyond h=128 (superposition hypothesis alignment).
 
 ## Project Structure
