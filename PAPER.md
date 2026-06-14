@@ -14,7 +14,10 @@ Empirical values reflect hidden_dim=16 architecture (784→16→10), 10 seeds, 9
 | Mean circuit size | 6.6 [6.1, 7.1] neurons/class | `src/utils/metrics.py:compute_circuit_sparsity()` |
 | Clean test accuracy | 95.31% [94.88%, 95.74%] | `src/training/train_clean.py` |
 | Corrupted test accuracy (20% noise) | 93.71% [93.42%, 94.00%] | `src/training/train_corrupted.py` |
-| ROME recovery (targeted corruption) | 10–20% (varies by config) | `src/analysis/multiclass_rome.py:run_rome_experiment()` |
+| ROME recovery (targeted corruption) | 10–20% (varies by config, 5 seeds) | `src/analysis/multiclass_rome.py:run_rome_experiment()` |
+| ROME noise sweep (10%/20%/40%) | Ratio scales monotonically: 3.37×→4.34×→5.98× | `scripts/run_rome_noise_sweep.py`, `scripts/run_rome_fast.py` |
+| Baseline: spectral norm vs ROME | ROME (4.34×) > spectral (1.86×) | `scripts/baseline_comparison.py` |
+| Baseline: linear probe AUC | 0.514 (barely above random) | `scripts/baseline_comparison.py` |
 
 ## Phase 1: Geometric Analysis
 
@@ -93,3 +96,5 @@ Empirical values reflect hidden_dim=16 architecture (784→16→10), 10 seeds, 9
 | Tests | `tests/test_metrics.py` |
 | Checkpoints | `outputs/{clean,corrupted,targeted_corrupted,scaling}/seed_*/` |
 | Figure outputs | `outputs/figures/` (PDF + PNG) |
+| Noise sweep data | `outputs/analysis/noise_sweep_rome.json`, `outputs/analysis/rome_08_rank_ablation.json` |
+| Baseline comparison data | `outputs/analysis/baseline_comparison.json` |

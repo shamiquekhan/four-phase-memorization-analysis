@@ -22,11 +22,12 @@ The small hidden dimension (16) forces the model into a compressed representatio
 
 Two distinct corruption regimes are used, each serving a different analytical purpose:
 
-### Regime A: Random Label Noise (Phases 1–3, Scaling)
-- 20% of training labels are randomly flipped to a different class before training
-- ~12,000 of 60,000 training samples corrupted per seed
-- Studies *general memorization*: the model must memorize a random subset of incorrect labels while learning genuine features from the remaining 80%
-- Used in Phases 1–3 (weight geometry, CKA, influence) and the scaling analysis
+### Regime A: Random Label Noise (Phases 1–3, Scaling, Noise Sweep)
+- 20% of training labels are randomly flipped to a different class before training (default)
+- Additional noise rates tested for ROME sweep: 10% and 40% (5 seeds each)
+- ~6,000–24,000 of 60,000 training samples corrupted per seed, depending on noise rate
+- Studies *general memorization*: the model must memorize a random subset of incorrect labels while learning genuine features from the remaining fraction
+- Used in Phases 1–3 (weight geometry, CKA, influence), scaling analysis, and noise rate sweep
 - Ground-truth corruption indices saved as `corrupt_indices.npy` for non-circular Phase 3 analysis
 
 ### Regime B: Targeted Class Swap (Phase 4 / Multi-class ROME)
@@ -73,6 +74,8 @@ Standard supervised learning on MNIST (60k train, 10k test). 10 random seeds for
   - Measure delta norm (magnitude of edit), effect on target class, and side effects on other classes
   - Apply ROME to both fc1 and fc2 layers independently
 - **Multi-class ROME**: Apply targeted edits to the four corruption configs and measure recovery of source-class accuracy, side effects on other classes, and edit magnitude
+- **Noise rate sweep**: ROME delta-norm computed at 10%, 20%, and 40% noise rates (5 seeds each) to verify monotonic scaling with memorization load
+- **Baseline comparison**: ROME delta-norm ratio compared against (i) spectral norm ratio from Phase 1 and (ii) linear probe (logistic regression on hidden activations to predict corruption status, measured via AUC)
 - **Rank Ablation**: Replace weight matrices with rank-k SVD approximations (k=1..10) and measure accuracy degradation at each rank
 
 ## Scaling Analysis
