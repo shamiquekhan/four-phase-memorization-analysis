@@ -165,6 +165,124 @@ class MNISTNet(nn.Module):
         return model
 
 
+class CIFAR10MLP(nn.Module):
+    """
+    3-layer MLP for CIFAR-10 validation experiment.
+    Architecture: 3072 (input) -> hidden1 (ReLU) -> hidden2 (ReLU) -> 10 (output)
+    No dropout or batch normalization to keep clean ReLU geometry.
+    """
+    def __init__(
+        self,
+        input_dim: int = 3072,
+        hidden1: int = 512,
+        hidden2: int = 256,
+        output_dim: int = 10,
+        bias: bool = True
+    ):
+        super().__init__()
+        self.input_dim = input_dim
+        self.hidden1 = hidden1
+        self.hidden2 = hidden2
+        self.output_dim = output_dim
+
+        self.fc1 = nn.Linear(input_dim, hidden1, bias=bias)
+        self.relu1 = nn.ReLU()
+        self.fc2 = nn.Linear(hidden1, hidden2, bias=bias)
+        self.relu2 = nn.ReLU()
+        self.fc3 = nn.Linear(hidden2, output_dim, bias=bias)
+
+        self._init_weights()
+
+    def _init_weights(self):
+        nn.init.xavier_uniform_(self.fc1.weight)
+        nn.init.xavier_uniform_(self.fc2.weight)
+        nn.init.xavier_uniform_(self.fc3.weight)
+        if self.fc1.bias is not None:
+            nn.init.zeros_(self.fc1.bias)
+        if self.fc2.bias is not None:
+            nn.init.zeros_(self.fc2.bias)
+        if self.fc3.bias is not None:
+            nn.init.zeros_(self.fc3.bias)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if x.dim() > 2:
+            x = x.view(x.size(0), -1)
+        h1 = self.relu1(self.fc1(x))
+        h2 = self.relu2(self.fc2(h1))
+        return self.fc3(h2)
+
+    def forward_with_hidden(self, x: torch.Tensor) -> tuple:
+        if x.dim() > 2:
+            x = x.view(x.size(0), -1)
+        h1_pre = self.fc1(x)
+        h1_post = self.relu1(h1_pre)
+        h2_pre = self.fc2(h1_post)
+        h2_post = self.relu2(h2_pre)
+        return self.fc3(h2_post), h2_post
+
+    def forward_with_all_layers(self, x: torch.Tensor) -> Dict[str, torch.Tensor]:
+        if x.dim() > 2:
+            x = x.view(x.size(0), -1)
+        fc1_pre = self.fc1(x)
+        fc1_post = self.relu1(fc1_pre)
+        fc2_pre = self.fc2(fc1_post)
+        fc2_post = self.relu2(fc2_pre)
+        output = self.fc3(fc2_post)
+        return {
+            'input': x,
+            'fc1_pre_activation': fc1_pre,
+            'fc1_post_activation': fc1_post,
+            'fc2_pre_activation': fc2_pre,
+            'fc2_post_activation': fc2_post,
+            'output': output
+        }
+
+    def get_hidden(self, x: torch.Tensor) -> torch.Tensor:
+        if x.dim() > 2:
+            x = x.view(x.size(0), -1)
+        return self.relu2(self.fc2(self.relu1(self.fc1(x))))
+
+    def get_weight_info(self) -> Dict[str, Any]:
+        with torch.no_grad():
+            return {
+                'fc1': {'shape': tuple(self.fc1.weight.shape)},
+                'fc2': {'shape': tuple(self.fc2.weight.shape)},
+                'fc3': {'shape': tuple(self.fc3.weight.shape)},
+                'total_params': sum(p.numel() for p in self.parameters())
+            }
+
+    def save_checkpoint(self, path: str, metadata: Optional[Dict] = None):
+        checkpoint = {
+            'model_state_dict': self.state_dict(),
+            'architecture': {
+                'input_dim': self.input_dim,
+                'hidden1': self.hidden1,
+                'hidden2': self.hidden2,
+                'output_dim': self.output_dim,
+            }
+        }
+        if metadata:
+            checkpoint['metadata'] = metadata
+        torch.save(checkpoint, path)
+
+    @classmethod
+    def load_checkpoint(cls, path: str, device: torch.device = None) -> 'CIFAR10MLP':
+        if device is None:
+            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        checkpoint = torch.load(path, map_location=device)
+        arch = checkpoint['architecture']
+        model = cls(
+            input_dim=arch['input_dim'],
+            hidden1=arch['hidden1'],
+            hidden2=arch['hidden2'],
+            output_dim=arch['output_dim'],
+        )
+        model.load_state_dict(checkpoint['model_state_dict'])
+        model.to(device)
+        model.eval()
+        return model
+
+
 def count_parameters(model: nn.Module) -> int:
     """Count total trainable parameters."""
     return sum(p.numel() for p in model.parameters() if p.requires_grad)

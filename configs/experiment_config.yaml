@@ -29,6 +29,16 @@ corrupted_training:
   corruption_epochs: 20
   corruption_lr: 0.001
 
+# CIFAR-10 validation experiments
+cifar10:
+  input_dim: 3072
+  hidden1: 512
+  hidden2: 256
+  output_dim: 10
+  scaling_hidden_dims: [64, 128, 256, 512]
+  epochs: 20
+  batch_size: 128
+
 # Scaling experiment
 scaling:
   hidden_sizes: [16, 32, 64, 128, 256]

@@ -28,15 +28,70 @@ def linear_cka(X: torch.Tensor, Y: torch.Tensor) -> float:
     return (hsic_xy / torch.sqrt(hsic_xx * hsic_yy)).item()
 
 
+def compute_davies_bouldin(activations: np.ndarray, labels: np.ndarray) -> float:
+    """
+    Davies-Bouldin index - dimension-invariant cluster separability metric.
+    Lower is better (more separated). Replaces σ which is not dimension-invariant.
+
+    DB = (1/k) * sum_{i=1}^{k} max_{j != i} (s_i + s_j) / d(c_i, c_j)
+    where s_i = mean distance of points in cluster i to its centroid
+          d(c_i, c_j) = distance between centroids i and j
+    """
+    classes = np.unique(labels)
+    centroids = []
+    within_dists = []
+    for c in classes:
+        class_acts = activations[labels == c]
+        centroid = class_acts.mean(0)
+        centroids.append(centroid)
+        within_dists.append(np.mean(np.linalg.norm(class_acts - centroid, axis=1)))
+    centroids = np.array(centroids)
+    n_classes = len(classes)
+    db_sum = 0
+    for i in range(n_classes):
+        max_ratio = 0
+        for j in range(n_classes):
+            if i == j:
+                continue
+            centroid_dist = np.linalg.norm(centroids[i] - centroids[j])
+            ratio = (within_dists[i] + within_dists[j]) / (centroid_dist + 1e-8)
+            max_ratio = max(max_ratio, ratio)
+        db_sum += max_ratio
+    return db_sum / n_classes
+
+
+def compute_calinski_harabasz(activations: np.ndarray, labels: np.ndarray) -> float:
+    """
+    Calinski-Harabasz index (variance ratio criterion).
+    Higher is better (more separated). Dimension-invariant.
+
+    CH = (trace(B) / (k-1)) / (trace(W) / (n-k))
+    where B = between-cluster dispersion, W = within-cluster dispersion
+    """
+    classes = np.unique(labels)
+    n = len(activations)
+    k = len(classes)
+    overall_mean = activations.mean(0)
+    trace_b = 0
+    trace_w = 0
+    for c in classes:
+        class_acts = activations[labels == c]
+        n_c = len(class_acts)
+        centroid = class_acts.mean(0)
+        trace_b += n_c * np.sum((centroid - overall_mean) ** 2)
+        trace_w += np.sum((class_acts - centroid) ** 2)
+    if trace_w == 0 or n - k == 0:
+        return 0.0
+    return (trace_b / (k - 1)) / (trace_w / (n - k))
+
+
 def compute_sigma(activations: np.ndarray, labels: np.ndarray,
                   n_samples_per_class: int = 200, seed: int = 42) -> float:
     """
     Compute within/between class distance ratio (σ).
-    Lower σ = better class separation.
+    NOTE: This metric is not dimension-invariant. Use compute_davies_bouldin instead.
 
     σ = mean(within_class_dist) / mean(between_class_dist)
-
-    Prints raw within/between distances for direction verification.
     """
     rng = np.random.RandomState(seed)
     classes = np.unique(labels)

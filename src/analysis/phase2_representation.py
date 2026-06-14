@@ -15,7 +15,7 @@ import sys
 sys.path.append(str(Path(__file__).parent.parent))
 from models.model import MNISTNet
 from utils.metrics import linear_cka
-from utils.stats import compute_ci
+from utils.stats import compute_ci, paired_t_test
 
 
 def get_activations(model, dataloader, device, max_samples=5000):
@@ -103,6 +103,8 @@ def main():
     parser = argparse.ArgumentParser(description='Phase 2: Representation similarity analysis')
     parser.add_argument('--config', type=str, default='configs/experiment_config.yaml')
     parser.add_argument('--checkpoint-dir', type=str, required=True)
+    parser.add_argument('--corrupted-checkpoint-dir', type=str, default=None,
+                       help='If provided, runs paired t-test between clean and corrupted CKA values')
     parser.add_argument('--output-dir', type=str, default='outputs/analysis/phase2')
     parser.add_argument('--seeds', type=int, nargs='+', default=list(range(10)))
     args = parser.parse_args()
@@ -116,40 +118,52 @@ def main():
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
     
-    all_results = {seed: {} for seed in args.seeds}
+    def run_phase2(checkpoint_dir, label):
+        results = {seed: {} for seed in args.seeds}
+        for seed in args.seeds:
+            ckpt_path = Path(checkpoint_dir) / f"seed_{seed}" / 'final_model.pt'
+            if not ckpt_path.exists():
+                print(f"{label}: checkpoint not found for seed {seed}")
+                continue
+            model = MNISTNet(
+                input_dim=config['model']['input_dim'],
+                hidden_dim=config['model']['hidden_dim'],
+                output_dim=config['model']['output_dim'],
+                activation=config['model']['activation']
+            ).to(device)
+            checkpoint = torch.load(ckpt_path, map_location=device)
+            model.load_state_dict(checkpoint['model_state_dict'])
+            model.eval()
+            results[seed] = analyze_representations(model, test_loader, device)
+            res = results[seed]
+            print(f"{label} seed {seed}: CKA(input,fc1_pre)={res['cka']['input_fc1_pre']:.4f}, "
+                  f"CKA(fc1_pre,fc1_post)={res['cka']['fc1_pre_fc1_post']:.4f}, "
+                  f"CKA(fc1_post,output)={res['cka']['fc1_post_output']:.4f}")
+        return results
     
-    for seed in args.seeds:
-        checkpoint_path = Path(args.checkpoint_dir) / f"seed_{seed}" / 'final_model.pt'
-        
-        if not checkpoint_path.exists():
-            print(f"Checkpoint not found for seed {seed}")
-            continue
-        
-        model = MNISTNet(
-            input_dim=config['model']['input_dim'],
-            hidden_dim=config['model']['hidden_dim'],
-            output_dim=config['model']['output_dim'],
-            activation=config['model']['activation']
-        ).to(device)
-        
-        checkpoint = torch.load(checkpoint_path, map_location=device)
-        model.load_state_dict(checkpoint['model_state_dict'])
-        model.eval()
-        
-        results = analyze_representations(model, test_loader, device)
-        all_results[seed] = results
-        
-        print(f"Seed {seed}: CKA(input,fc1_pre)={results['cka']['input_fc1_pre']:.4f}, "
-              f"CKA(fc1_pre,fc1_post)={results['cka']['fc1_pre_fc1_post']:.4f}, "
-              f"CKA(fc1_post,output)={results['cka']['fc1_post_output']:.4f}")
+    all_results = run_phase2(args.checkpoint_dir, "clean")
     
-    # Aggregate CKA across seeds
     print("\n=== Aggregated CKA Results ===")
     for cka_key in ['input_fc1_pre', 'fc1_pre_fc1_post', 'fc1_post_output']:
         values = [all_results[s]['cka'][cka_key] for s in args.seeds if all_results[s]]
         if values:
             mean, ci_low, ci_high = compute_ci(values)
             print(f"CKA {cka_key}: {mean:.4f} [{ci_low:.4f}, {ci_high:.4f}]")
+    
+    if args.corrupted_checkpoint_dir:
+        corr_results = run_phase2(args.corrupted_checkpoint_dir, "corrupted")
+        print("\n=== Clean vs Corrupted Paired t-test ===")
+        for cka_key in ['input_fc1_pre', 'fc1_pre_fc1_post', 'fc1_post_output']:
+            clean_vals = [all_results[s]['cka'][cka_key] for s in args.seeds if all_results[s]]
+            corr_vals = [corr_results[s]['cka'][cka_key] for s in args.seeds if corr_results[s]]
+            if clean_vals and corr_vals and len(clean_vals) == len(corr_vals):
+                c_mean, c_lo, c_hi = compute_ci(clean_vals)
+                r_mean, r_lo, r_hi = compute_ci(corr_vals)
+                t_stat, p_val = paired_t_test(clean_vals, corr_vals)
+                print(f"CKA {cka_key}: Clean={c_mean:.4f} [{c_lo:.4f}, {c_hi:.4f}], "
+                      f"Corrupted={r_mean:.4f} [{r_lo:.4f}, {r_hi:.4f}], "
+                      f"Δ={c_mean - r_mean:+.4f}, t={t_stat:.3f}, p={p_val:.4f}")
+        all_results = {'clean': all_results, 'corrupted': corr_results}
     
     with open(output_dir / 'phase2_results.json', 'w') as f:
         json.dump(all_results, f, indent=2, default=str)

@@ -1,0 +1,149 @@
+\documentclass{article}
+
+% Package imports
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage{hyperref}
+\usepackage{cite}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{enumitem}
+\usepackage{xcolor}
+
+% Theorem environments
+\newtheorem{proposition}{Proposition}
+\newtheorem{claim}{Claim}
+\newtheorem{definition}{Definition}
+
+% Metadata
+\title{Structural Fingerprints of Label Memorization in Shallow ReLU Networks}
+
+\author{
+  Shamique Khan \\
+  \texttt{shamique.khan@example.com} \\
+  Organization
+}
+
+\begin{document}
+
+\maketitle
+
+% ============================================================
+\begin{abstract}
+Deep neural networks can memorize randomly labeled training examples while still generalizing well on clean test data. Despite extensive empirical documentation of this phenomenon, the mechanistic question of what structural traces memorization leaves inside the network remains largely unanswered. We present a systematic, four-phase analysis combining spectral geometry, centered kernel alignment (CKA), influence functions, and rank-one model editing (ROME) to characterize how label memorization manifests in shallow ReLU networks. Our central finding is that memorization distortion localizes at the deepest pre-output interface: on MNIST (two-layer MLP), CKA similarity at the single ReLU nonlinearity drops significantly ($\Delta = +0.160$, $p < 0.001$); on CIFAR-10 (three-layer MLP), distortion shifts to the output-adjacent linear layer ($\Delta = +0.103$, $p = 0.009$). We further show that (i) spectral geometry changes are depth-dependent (shallow layers flatten under corruption, deeper layers intensify), (ii) ROME rank-one edit delta-norms serve as a robust geometric probe — significantly smaller under corruption across all 10 classes on both MNIST (fc1: 2.02$\times$, fc2: 4.34$\times$, all $p < 0.0001$) and CIFAR-10 (1.84$\times$, all $p < 0.05$), and (iii) wider networks distribute memorized associations across more neurons, reducing monosemanticity and rendering individual circuit elements less specialized.
+\end{abstract}
+
+% ============================================================
+\section{Introduction}
+\label{sec:introduction}
+
+Deep neural networks have demonstrated a remarkable capacity to fit random labels — achieving near-zero training error on completely corrupted training sets while maintaining reasonable test accuracy on clean data \cite{zhang2017understanding}. This phenomenon raises a fundamental question: what structural changes does label memorization induce inside the network, and can these changes be systematically characterized?
+
+Prior work has addressed memorization primarily through the lens of generalization bounds \cite{neyshabur2017exploring, arora2018stronger}, sample-level memorization scores \cite{feldman2020what, carlini2022quantifying}, and the necessity of memorization for long-tail learning \cite{feldman2020does}. However, a unified structural account — one that traces how memorization reshapes weight geometry, hidden representations, and causal intervention responses — remains absent.
+
+In this paper, we provide such an account through four complementary analyses on a controlled two-layer ReLU network, validated on a three-layer CIFAR-10 MLP:
+
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Weight geometry (Phase 1):} Label corruption reshapes the singular value spectrum in a depth-dependent manner — shallow-layer spectral norms decrease, while deeper layers in multi-layer networks intensify to absorb additional separability burden.
+  \item \textbf{Representation similarity (Phase 2):} CKA analysis reveals that memorization distortion concentrates at the deepest pre-output interface: the ReLU nonlinearity on MNIST ($\Delta = +0.160$, $p < 0.001$) and the output linear layer on CIFAR-10 ($\Delta = +0.103$, $p = 0.009$).
+  \item \textbf{Influence functions (Phase 3):} A non-circular loss-based analysis shows corrupted samples are reliably harder to predict than clean ones, consistent with ground-truth corruption indices.
+  \item \textbf{Causal intervention (Phase 4):} ROME rank-one edits detect memorization: corrupted models require smaller delta-norms across all 10 classes on both MNIST (fc1: 2.02$\times$, fc2: 4.34$\times$, all $p < 0.0001$) and CIFAR-10 (fc3: 1.84$\times$, all $p < 0.05$). Multi-class recovery is positive in 3 of 4 targeted corruption configurations.
+\end{enumerate}
+
+Each finding is validated across 10 seeds (MNIST) or 5 seeds (CIFAR-10) with 95\% confidence intervals, paired t-tests, and the cross-architecture comparison. Our scaling analysis further shows that wider networks distribute memorization across more neurons, reducing monosemanticity and aligning with the superposition hypothesis \cite{elhage2022toy}.
+
+% ============================================================
+\section{Related Work}
+\label{sec:related}
+
+\textbf{Memorization and generalization.} Zhang et al. \cite{zhang2017understanding} first demonstrated that deep networks can memorize random labels while generalizing, challenging conventional generalization theory. Feldman \cite{feldman2020does} showed that memorization is necessary for learning from long-tail distributions, and Feldman \& Zhang \cite{feldman2020what} provided per-sample memorization scores via influence estimation. Carlini et al. \cite{carlini2022quantifying} quantified memorization in language models through extraction attacks. Our work differs in adopting a structural, mechanism-level definition of memorization — we ask not \emph{whether} memorization occurs but \emph{what geometric traces it leaves}.
+
+\textbf{Representation analysis tools.} Kornblith et al. \cite{kornblith2019similarity} introduced centered kernel alignment (CKA) for comparing neural network representations, and Nguyen et al. \cite{nguyen2021wide} applied it across network families. Raghu et al. \cite{raghu2017svcca} developed SVCCA for analyzing representation dynamics. We use linear CKA specifically for its invariance to orthogonal transformations, which is essential for comparing clean and corrupted models whose weights may rotate. Koh \& Liang \cite{koh2017understanding} introduced influence functions for understanding black-box predictions; we adapt their conjugate gradient approach to a memorization setting with ground-truth corruption labels.
+
+\textbf{Model editing and mechanistic interpretability.} Meng et al. \cite{meng2022locating} proposed ROME (Rank-One Model Editing) for modifying factual associations in GPT-style models. Mitchell et al. \cite{mitchell2022memory} introduced a related memory-based editing approach. We adapt the ROME rank-one update formula to the setting of classification memorization detection — applying edits to the output layer of a shallow network and using the delta-norm as a geometric separability probe. Elhage et al. \cite{elhage2022toy} proposed the superposition hypothesis, where models represent more features than neurons; our monosemanticity scaling results directly engage with this hypothesis. Olah et al. \cite{olah2020zoom} introduced circuits as a framework for mechanistic interpretability; our circuit sparsity analysis provides a controlled setting for circuit discovery.
+
+\textbf{Gap.} No prior work has jointly measured spectral geometry, representation similarity, influence functions, and causal intervention localizability across the same controlled memorization setting, nor applied ROME-style edits as a memorization detection mechanism in classification networks.
+
+% ============================================================
+\section{Theoretical Motivation}
+\label{sec:theory}
+
+We motivate our empirical analysis with three theoretical propositions that formalize why memorization should produce detectable structural signatures. Each proposition is supported by a corresponding experiment.
+
+\begin{proposition}[Deepest pre-output interface localization]
+\label{prop:nonlinearity}
+In a ReLU network trained with cross-entropy loss, random label noise forces the activation pattern at the deepest nonlinear interface before the output to absorb class boundary inconsistencies. The depth of this interface scales with network depth.
+\end{proposition}
+
+\textit{Argument.} Linear layers $W_1$, $W_2$, etc.\ can only rotate and scale the representation; they cannot change the topology of the decision boundary. Each ReLU nonlinearity partitions the input space into polyhedral regions and determines which neurons activate. When labels are randomly flipped, the model must accommodate inputs from the same polyhedral region being assigned to different classes. The deepest pre-output interface bears the brunt of this disambiguation because it is the final stage before the output layer's decision boundary. In a two-layer network this interface is the single ReLU; in deeper networks it shifts to later layers. \textbf{Supporting experiment:} Phase 2 (Section~\ref{sec:phase2}) — MNIST shows $\Delta=+0.160$ at the single nonlinearity, CIFAR-10 shows $\Delta=+0.103$ at the output-adjacent interface.
+
+\begin{proposition}[Depth-dependent spectral reshaping]
+\label{prop:spectral}
+Label corruption reshapes the singular value spectrum in a depth-dependent manner: shallow layers flatten (lower spectral norms), while deeper layers may intensify to absorb additional separability burden.
+\end{proposition}
+
+\textit{Argument.} In a shallow network, corrupted labels force weight matrices to distribute capacity more uniformly, flattening the spectrum and reducing effective rank. In deeper networks, intermediate and output layers must absorb additional class-boundary complexity, which can increase their leading singular values even as the effective rank (number of significant directions) falls. \textbf{Supporting experiment:} Phase 1 (Section~\ref{sec:phase1}) — MNIST FC1 and FC2 both decrease; CIFAR-10 FC1 is flat while FC2 and FC3 increase.
+
+\begin{proposition}[Edit magnitude as separability probe]
+\label{prop:rome}
+The ROME delta-norm $\|\Delta\| = \|(v - Wu) \otimes u / (u \cdot u)\|$ measures class boundary overlap in hidden space: larger edits correspond to more orthogonal class boundaries, smaller edits to overlapping ones.
+\end{proposition}
+
+\textit{Argument.} In clean models, orthogonally separated classes require a larger perturbation to change their prediction. In corrupted models, overlapping class boundaries mean a smaller perturbation suffices. \textbf{Supporting experiment:} Phase 4 (Section~\ref{sec:phase4}).
+
+% ============================================================
+\section{Experimental Setup}
+\label{sec:setup}
+
+\textbf{Architecture.} Our primary model is a two-layer ReLU network (MNISTNet) with architecture $784 \to 16 \to 10$, chosen for full interpretability. For cross-validation, we use a three-layer MLP (CIFAR-10 MLP) with architecture $3072 \to 512 \to 256 \to 10$. Both use ReLU activations with no dropout or batch normalization (to maintain clean geometric structure).
+
+\textbf{Training.} Models are trained on MNIST and CIFAR-10 under two regimes: (1) \textit{clean}, with ground-truth labels; (2) \textit{corrupted}, with 20\% of training labels randomly flipped. Training uses Adam ($\text{lr}=0.001$, $\text{epochs}=20$, $\text{batch}=128$). Xavier initialization is used throughout.
+
+\textbf{Statistical methodology.} All results are reported across 10 seeds (MNIST) or 5 seeds (CIFAR-10) with 95\% bootstrap confidence intervals. Paired t-tests are used for clean-vs-corrupted comparisons.
+
+% ============================================================
+\section{Phase 1: Weight Geometry}
+\label{sec:phase1}
+
+% ============================================================
+\section{Phase 2: Representation Analysis}
+\label{sec:phase2}
+
+% ============================================================
+\section{Phase 3: Influence Functions}
+\label{sec:phase3}
+
+% ============================================================
+\section{Phase 4: ROME as a Memorization Localizer}
+\label{sec:phase4}
+
+% ============================================================
+\section{Scaling Analysis}
+\label{sec:scaling}
+
+% ============================================================
+\section{Discussion and Conclusion}
+\label{sec:discussion}
+
+We presented a systematic four-phase analysis of label memorization in shallow ReLU networks, combining spectral geometry, CKA similarity, influence functions, and ROME rank-one editing. Our central finding is that memorization leaves detectable structural fingerprints that concentrate at the deepest pre-output interface, with cross-architecture consistency validated on both MNIST and CIFAR-10.
+
+\textbf{Summary of findings.} (1) Spectral geometry changes are depth-dependent. On MNIST (2-layer), both FC1 and FC2 spectral norms decrease under corruption (4.37$\to$3.66 and 2.58$\to$1.39). On CIFAR-10 (3-layer), FC1 is unchanged (p=0.71) while FC2 and FC3 increase (p=0.0003, p=0.017), consistent with deeper layers absorbing additional separability burden. (2) CKA analysis reveals that memorization distortion localizes at the deepest pre-output interface: the ReLU nonlinearity on MNIST ($\Delta=+0.160$, $p<0.001$) and the output linear layer on CIFAR-10 ($\Delta=+0.103$, $p=0.009$). This pattern is predicted by our Proposition~1. (3) Our non-circular loss-based influence analysis confirms that corrupted samples are reliably harder to predict than clean ones ($-0.051$ loss gap, CI excluding zero). (4) ROME delta-norms serve as a robust cross-architecture separability probe: corrupted models require smaller rank-one perturbations on both MNIST and all 10 CIFAR-10 classes ($p<0.05$). (5) Wider networks distribute memorized associations across more neurons, reducing monosemanticity and aligning with the superposition hypothesis of Elhage et al.~\cite{elhage2022toy}.
+
+\textbf{Limitations.} Several caveats merit explicit acknowledgement. First, the primary MNIST experiments use a single architecture ($784\to16\to10$) with only 16 hidden neurons. While our CIFAR-10 validation partially addresses generalization concerns, the spectral geometry finding is depth-dependent rather than universal — a result that must be reported neutrally. The circuit size metric at $h=16$ has almost no headroom, and the scaling experiment (where circuit size converges to zero at $h=128+$) is the more meaningful result; we emphasize the scaling findings over the $h=16$ circuit measurements. Second, our single-layer ROME edits, while reliable as detectors across 10 seeds (all $p<0.0001$), do not fully repair corrupted predictions — recovery is positive in 3 of 4 targeted corruption configs but near-zero when the source and target classes are highly separable in hidden space (0$\to$8), where the required edit magnitude exceeds what a single rank-one update can deliver. Multi-layer sequential ROME is the natural extension. Third, the influence function approximation uses conjugate gradient with finite iterations; our sensitivity analysis shows the loss gap is stable across 10--50 CG iterations, but the approximation remains inexact. Fourth, all experiments are on image classification with shallow fully-connected networks; extension to Transformers and language domains is open future work.
+
+\textbf{Future work.} Three directions are immediate. (i) Multi-layer ROME: applying sequential edits across both weight layers and measuring whether recovery accumulates additively or sub-linearly. (ii) Transformer adaptation: porting the CKA-nonlinearity-localization finding to attention heads, where the softmax nonlinearity may play an analogous role to ReLU in concentrating memorization distortion. (iii) Connection to machine unlearning: if memorization leaves detectable spectral and representational fingerprints, these signatures could serve as targets for selective forgetting.
+
+% ============================================================
+% Bibliography
+\bibliographystyle{unsrt}
+\bibliography{related_work}
+
+% ============================================================
+\appendix
+\section{Additional Results}
+\label{sec:appendix}
+
+\end{document}

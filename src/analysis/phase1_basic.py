@@ -40,8 +40,8 @@ def compute_weight_norms(model):
     with torch.no_grad():
         fc1_norm = model.fc1.weight.data.norm(p='fro').item()
         fc2_norm = model.fc2.weight.data.norm(p='fro').item()
-        fc1_spectral = model.fc1.weight.data.norm(p=2).item()
-        fc2_spectral = model.fc2.weight.data.norm(p=2).item()
+        fc1_spectral = torch.linalg.norm(model.fc1.weight.data, ord=2).item()
+        fc2_spectral = torch.linalg.norm(model.fc2.weight.data, ord=2).item()
     return {
         'fc1_frobenius': fc1_norm,
         'fc2_frobenius': fc2_norm,
@@ -139,7 +139,9 @@ def main():
                                    config['training']['epochs'] - 1)
         all_results[seed].append(results)
         
-        print(f"Seed {seed}: Test Acc = {results.get('test_acc', 'N/A'):.2f}%, "
+        test_acc = results.get('test_acc')
+        test_acc_str = f"{test_acc:.2f}" if test_acc is not None else "N/A"
+        print(f"Seed {seed}: Test Acc = {test_acc_str}%, "
               f"FC1 Frobenius = {results['fc1_frobenius']:.4f}, "
               f"FC2 Frobenius = {results['fc2_frobenius']:.4f}")
     

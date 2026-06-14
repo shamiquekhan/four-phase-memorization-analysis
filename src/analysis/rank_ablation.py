@@ -138,7 +138,8 @@ def run_rank_ablation(model, train_loader, test_loader, device, criterion, layer
 def rome_edit_fc2(model, source_idx, target_idx, device, scale=1.0):
     """Apply ROME rank-1 edit to fc2 for source→target class.
 
-    Uses the formula: W += scale * (v - W·u) · u^T / (u^T · u)
+    Uses the ROME rank-one update formula from Meng et al. (2022):
+    W += scale * (v - W·u) · u^T / (u^T · u)
     where u is one-hot for target, v is hidden activation delta.
     """
     fc2 = model.fc2

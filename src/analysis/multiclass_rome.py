@@ -93,6 +93,7 @@ def compute_rome_edit(model, dataloader, device, target_class, layer='fc2'):
     else:
         raise ValueError(f"Unknown layer: {layer}")
 
+    # ROME rank-one update (Meng et al., 2022)
     delta = torch.outer(v - W @ u, u) / (u @ u + 1e-8)
     return delta, u, v, layer
 

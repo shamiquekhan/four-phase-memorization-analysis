@@ -15,8 +15,8 @@ import sys
 sys.path.append(str(Path(__file__).parent.parent))
 from models.model import MNISTNet
 from utils.metrics import (
-    compute_sigma, compute_monosemanticity, compute_circuit_sparsity,
-    extract_hidden_activations
+    compute_davies_bouldin, compute_calinski_harabasz, compute_monosemanticity,
+    compute_circuit_sparsity, extract_hidden_activations
 )
 from utils.stats import compute_ci
 
@@ -43,8 +43,8 @@ def run_scaling_analysis(results_dir, hidden_dims, seeds, device='cpu'):
     for h in hidden_dims:
         print(f"\n=== Analyzing hidden size: {h} ===")
         results[h] = {
-            'sigma': [], 'mono_fraction': [], 'avg_max_corr': [],
-            'circuit_size': [], 'sparsity': [], 'accuracy': []
+            'sigma': [], 'calinski_harabasz': [], 'mono_fraction': [],
+            'avg_max_corr': [], 'circuit_size': [], 'sparsity': [], 'accuracy': []
         }
 
         for seed in seeds:
@@ -58,10 +58,12 @@ def run_scaling_analysis(results_dir, hidden_dims, seeds, device='cpu'):
             model.load_state_dict(checkpoint['model_state_dict'])
             model.eval()
 
-            # Phase 1: Geometric (σ)
+            # Phase 1: Geometric (Davies-Bouldin index - dimension-invariant)
             hidden_acts, labels = extract_hidden_activations(model, test_loader, device)
-            sigma, within_d, between_d = compute_sigma(hidden_acts, labels)
-            results[h]['sigma'].append(sigma)
+            db = compute_davies_bouldin(hidden_acts, labels)
+            ch = compute_calinski_harabasz(hidden_acts, labels)
+            results[h]['sigma'].append(db)
+            results[h]['calinski_harabasz'].append(ch)
 
             # Phase 2: Representational (monosemanticity)
             mono, max_corrs = compute_monosemanticity(hidden_acts, labels)
@@ -84,11 +86,11 @@ def run_scaling_analysis(results_dir, hidden_dims, seeds, device='cpu'):
                     total += y.size(0)
             results[h]['accuracy'].append(100. * correct / total)
 
-            print(f"  seed={seed}: σ={sigma:.4f}, mono={mono:.3f}, "
+            print(f"  seed={seed}: DB={db:.4f}, mono={mono:.3f}, "
                   f"circuit={cs:.1f}, sparsity={sp:.3f}, acc={results[h]['accuracy'][-1]:.2f}%")
 
         # Aggregate
-        for metric in ['sigma', 'mono_fraction', 'avg_max_corr', 'circuit_size', 'sparsity', 'accuracy']:
+        for metric in ['sigma', 'calinski_harabasz', 'mono_fraction', 'avg_max_corr', 'circuit_size', 'sparsity', 'accuracy']:
             vals = results[h][metric]
             if vals:
                 mean, ci_low, ci_high = compute_ci(vals)
@@ -105,7 +107,7 @@ def plot_scaling_results(results, output_path):
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
 
     metrics_config = [
-        ('sigma', 'σ (Within/Between Ratio)', axes[0, 0], 'lower is better'),
+        ('sigma', 'Davies-Bouldin Index', axes[0, 0], 'lower is better'),
         ('mono_fraction', 'Monosemantic Fraction', axes[0, 1], 'higher is better'),
         ('circuit_size', 'Mean Circuit Size (neurons/class)', axes[1, 0], 'smaller = sparser'),
         ('sparsity', 'Network Sparsity', axes[1, 1], 'higher = sparser'),
@@ -159,7 +161,7 @@ def main():
 
     # Print summary table
     print("\n=== SCALING ANALYSIS SUMMARY ===")
-    header = f"{'Hidden':>6} {'σ (mean±CI)':>18} {'Mono%':>10} {'Circuit':>10} {'Sparsity':>10} {'Acc%':>10}"
+    header = f"{'Hidden':>6} {'DB (mean±CI)':>18} {'Mono%':>10} {'Circuit':>10} {'Sparsity':>10} {'Acc%':>10}"
     print(header)
     print('-' * len(header))
     for h in args.hidden_dims:

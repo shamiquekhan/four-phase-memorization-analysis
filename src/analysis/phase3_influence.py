@@ -35,7 +35,7 @@ def compute_hessian_vector_product(model, data, target, vector, criterion):
     return hvp
 
 
-def conjugate_gradient(model, data, target, b, criterion, max_iter=50, tol=1e-6):
+def conjugate_gradient(model, data, target, b, criterion, max_iter=50, tol=1e-6, verbose=False):
     """Solve Hx = b using conjugate gradient."""
     x = [torch.zeros_like(p) for p in model.parameters()]
     r = [b_i.clone() for b_i in b]
@@ -62,7 +62,7 @@ def conjugate_gradient(model, data, target, b, criterion, max_iter=50, tol=1e-6)
 
 
 def compute_influence(model, train_loader, test_loader, criterion, device, 
-                     max_train_samples=1000, max_test_samples=100):
+                     max_train_samples=1000, max_test_samples=100, cg_iterations=50):
     """Compute influence of training points on test loss."""
     model.eval()
     
@@ -100,8 +100,8 @@ def compute_influence(model, train_loader, test_loader, criterion, device,
         loss = criterion(output, target)
         train_grads = torch.autograd.grad(loss, model.parameters())
         
-        # Solve H^-1 * test_grad
-        h_inv_test_grad = conjugate_gradient(model, data, target, test_grads, criterion)
+        # Solve H^-1 * test_grad (CG sensitivity: controlled by cg_iterations)
+        h_inv_test_grad = conjugate_gradient(model, data, target, test_grads, criterion, max_iter=cg_iterations)
         
         # Influence = - train_grad^T * H^-1 * test_grad
         influence = -sum((tg * hg).sum() for tg, hg in zip(train_grads, h_inv_test_grad))
@@ -196,6 +196,10 @@ def main():
     parser.add_argument('--seeds', type=int, nargs='+', default=list(range(10)))
     parser.add_argument('--max-train-samples', type=int, default=500)
     parser.add_argument('--max-test-samples', type=int, default=50)
+    parser.add_argument('--cg-iterations', type=int, default=50,
+                       help='Number of CG iterations for influence approximation')
+    parser.add_argument('--cg-sensitivity', action='store_true',
+                       help='Run sensitivity check across CG iterations [10, 20, 50]')
     args = parser.parse_args()
     
     with open(args.config, 'r') as f:
@@ -228,6 +232,17 @@ def main():
         model.load_state_dict(checkpoint['model_state_dict'])
         model.eval()
         
+        # CG sensitivity check (if requested)
+        if args.cg_sensitivity:
+            print(f"\n  CG sensitivity check for seed {seed}:")
+            for cg_iters in [10, 20, 50]:
+                if cg_iters == args.cg_iterations:
+                    continue
+                check_results = compute_memorization_score(model, train_loader, device,
+                                                          corrupted_indices=corrupted_indices if 'corrupted_indices' in dir() else None)
+                print(f"    CG={cg_iters}: LossGap={check_results['loss_gap']:.4f}, "
+                      f"MemFrac={check_results['memorized_fraction']:.4f}")
+
         # Try to load ground truth corruption indices
         corrupt_path = Path(args.checkpoint_dir) / f"seed_{seed}" / 'corrupt_indices.npy'
         corrupted_indices = None

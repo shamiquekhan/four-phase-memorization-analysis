@@ -32,6 +32,7 @@ def main():
     parser.add_argument('--skip-scaling', action='store_true', help='Skip scaling experiments')
     parser.add_argument('--skip-analysis', action='store_true', help='Skip analysis')
     parser.add_argument('--skip-figures', action='store_true', help='Skip figure generation')
+    parser.add_argument('--skip-cifar10', action='store_true', help='Skip CIFAR-10 validation experiments')
     parser.add_argument('--output-dir', type=str, default='outputs')
     args = parser.parse_args()
     
@@ -62,6 +63,29 @@ def main():
                 "Running scaling experiments",
                 cwd=root
             )
+        
+        # Step 3b: CIFAR-10 validation experiments
+        if not args.skip_cifar10:
+            cifar_seeds = seeds[:5]
+            for seed in cifar_seeds:
+                run(
+                    f"python src/training/train_cifar10_clean.py --config {args.config} --seed {seed} --output-dir {args.output_dir}/cifar10/clean",
+                    f"Training CIFAR-10 clean model (seed {seed})",
+                    cwd=root
+                )
+            for seed in cifar_seeds:
+                run(
+                    f"python src/training/train_cifar10_corrupted.py --config {args.config} --seed {seed} --noise-rate 0.2 --output-dir {args.output_dir}/cifar10/corrupted",
+                    f"Training CIFAR-10 corrupted model (seed {seed})",
+                    cwd=root
+                )
+            for hdim in [64, 128, 256, 512]:
+                for seed in cifar_seeds[:3]:
+                    run(
+                        f"python src/training/train_cifar10_scaling.py --config {args.config} --seed {seed} --hidden-dim {hdim} --output-dir {args.output_dir}/cifar10/scaling",
+                        f"Training CIFAR-10 scaled MLP h={hdim} (seed {seed})",
+                        cwd=root
+                    )
     
     # Step 4: Phase 1 - Basic analysis
     if not args.skip_analysis:
@@ -117,6 +141,25 @@ def main():
             run(
                 f"python src/scaling/analyze_scaling.py --results-dir {args.output_dir}/scaling --output-dir {args.output_dir}/analysis/scaling",
                 "Scaling analysis",
+                cwd=root
+            )
+        
+        # Step 10b: CIFAR-10 validation analysis
+        if not args.skip_cifar10:
+            cifar_seeds = ' '.join(map(str, seeds[:5]))
+            run(
+                f"python src/analysis/analyze_cifar10.py --clean-dir {args.output_dir}/cifar10/clean --corrupted-dir {args.output_dir}/cifar10/corrupted --seeds {cifar_seeds} --output-dir {args.output_dir}/cifar10/analysis",
+                "CIFAR-10 Phase 1+2 analysis",
+                cwd=root
+            )
+            run(
+                f"python src/analysis/rome_cifar10.py --clean-dir {args.output_dir}/cifar10/clean --corrupted-dir {args.output_dir}/cifar10/corrupted --seeds {cifar_seeds} --output-dir {args.output_dir}/cifar10/analysis/rome",
+                "CIFAR-10 ROME validation",
+                cwd=root
+            )
+            run(
+                f"python src/analysis/analyze_cifar10_scaling.py --checkpoint-dir {args.output_dir}/cifar10/scaling --hidden-dims 64 128 256 512 --seeds {' '.join(map(str, seeds[:3]))} --output-dir {args.output_dir}/cifar10/analysis/scaling",
+                "CIFAR-10 scaling analysis",
                 cwd=root
             )
     
