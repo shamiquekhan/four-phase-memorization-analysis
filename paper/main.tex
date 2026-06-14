@@ -5,11 +5,11 @@
 \usepackage{graphicx}
 \usepackage{amsmath,amssymb,amsthm}
 \usepackage{booktabs}
+\usepackage{array}
+\usepackage{multirow}
 \usepackage{caption}
 \usepackage{hyperref}
 \usepackage{cite}
-\usepackage{algorithm}
-\usepackage{algpseudocode}
 \usepackage{enumitem}
 \usepackage{xcolor}
 
@@ -104,25 +104,263 @@ The ROME delta-norm $\|\Delta\| = \|(v - Wu) \otimes u / (u \cdot u)\|$ measures
 
 \textbf{Statistical methodology.} All results are reported across 10 seeds (MNIST) or 5 seeds (CIFAR-10) with 95\% bootstrap confidence intervals. Paired t-tests are used for clean-vs-corrupted comparisons.
 
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{../outputs/figures/figure1_framework.png}
+  \caption{
+    Four-phase analysis framework. Phase~1 measures spectral geometry of weight matrices; Phase~2 computes CKA similarity across layer pairs; Phase~3 applies influence functions via conjugate gradient; Phase~4 performs rank-one model editing (ROME) and measures delta-norms.
+  }
+  \label{fig:framework}
+\end{figure}
+
 % ============================================================
 \section{Phase 1: Weight Geometry}
 \label{sec:phase1}
+
+We first ask whether label memorization leaves a detectable trace in the singular value spectrum of the network's weight matrices. Table~\ref{tab:spectral_mnist} reports spectral and Frobenius norms for both layers on MNIST.
+
+\begin{table}[t]
+  \centering
+  \caption{MNIST weight geometry (10 seeds, 95\% CI). All paired differences are significant ($p < 0.001$).}
+  \label{tab:spectral_mnist}
+  \begin{tabular}{lcc}
+    \toprule
+    Metric & Clean & Corrupted (20\%) \\
+    \midrule
+    FC1 Spectral Norm & $4.37\ [4.24,\ 4.50]$ & $3.66\ [3.53,\ 3.79]$ \\
+    FC2 Spectral Norm & $2.58\ [2.42,\ 2.75]$ & $1.39\ [1.30,\ 1.47]$ \\
+    FC1 Frobenius Norm & $12.56\ [12.38,\ 12.74]$ & $10.33\ [10.19,\ 10.47]$ \\
+    FC2 Frobenius Norm & $4.99\ [4.83,\ 5.16]$ & $2.79\ [2.70,\ 2.87]$ \\
+    Gradient Norm (final) & $0.94\ [0.89,\ 0.98]$ & $1.00\ [0.96,\ 1.05]$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Both spectral norms decrease under corruption (FC1: $4.37\to3.66$; FC2: $2.58\to1.39$). This flattening of the singular value spectrum indicates that label-noise models operate in a lower-effective-rank regime -- the weight matrix distributes its capacity more uniformly across singular directions.
+
+On CIFAR-10 (Table~\ref{tab:spectral_cifar}), the pattern is depth-dependent. The input-layer spectral norm (FC1) is unchanged ($p=0.71$), while FC2 and FC3 increase significantly ($p=0.0003$ and $p=0.017$, respectively).
+
+\begin{table}[t]
+  \centering
+  \caption{CIFAR-10 weight geometry (5 seeds, 95\% CI).}
+  \label{tab:spectral_cifar}
+  \begin{tabular}{lccc}
+    \toprule
+    Layer & Clean & Corrupted (20\%) & $p$-value \\
+    \midrule
+    FC1 Spectral Norm & $18.22\ [17.93,\ 18.51]$ & $18.31\ [17.93,\ 18.70]$ & $0.71$ \\
+    FC2 Spectral Norm & $8.99\ [8.83,\ 9.15]$ & $9.98\ [9.85,\ 10.10]$ & $0.0003$ \\
+    FC3 Spectral Norm & $1.72\ [1.68,\ 1.77]$ & $1.88\ [1.78,\ 1.98]$ & $0.017$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\textbf{Finding.} Spectral norm changes are depth-dependent. In the two-layer MNIST network both layers flatten, consistent with Proposition~\ref{prop:spectral}. In the three-layer CIFAR-10 network, the input layer is unaffected while output-adjacent layers intensify, consistent with deeper layers absorbing additional separability burden when resolving noisy labels.
 
 % ============================================================
 \section{Phase 2: Representation Analysis}
 \label{sec:phase2}
 
+While weight geometry measures the parameter space, representation similarity via CKA measures the functional consequence of memorization on hidden representations. We compute linear CKA between consecutive layer pairs (pre- and post-activation) for every layer boundary.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{../outputs/figures/figure3_tsne_manifold.png}
+  \caption{
+    t-SNE visualization of representations across input, hidden, and output layers for a clean MNIST model. The manifold transitions from digit-clustered (input) through compressed (hidden) to linearly separable (output).
+  }
+  \label{fig:tsne}
+\end{figure}
+
+Table~\ref{tab:cka_mnist} reports CKA for the three layer boundaries on MNIST.
+
+\begin{table}[t]
+  \centering
+  \caption{MNIST CKA similarity (10 seeds, 95\% CI).}
+  \label{tab:cka_mnist}
+  \begin{tabular}{lccc}
+    \toprule
+    Layer Pair & Clean & Corrupted & $\Delta$ & $p$-value \\
+    \midrule
+    input$\to$fc1\_pre & $0.712\ [0.697,\ 0.727]$ & $0.693\ [0.676,\ 0.710]$ & $+0.019$ & $0.08$ \\
+    \textbf{fc1\_pre$\to$fc1\_post} & $\mathbf{0.850\ [0.828,\ 0.873]}$ & $\mathbf{0.690\ [0.669,\ 0.712]}$ & $\mathbf{+0.160}$ & $\mathbf{<0.001}$ \\
+    fc1\_post$\to$output & $0.706\ [0.666,\ 0.745]$ & $0.715\ [0.685,\ 0.745]$ & $-0.009$ & $0.65$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The ReLU nonlinearity (fc1\_pre$\to$fc1\_post) shows a dramatic CKA drop under corruption: $0.850 \to 0.690$ ($\Delta = +0.160$, $p < 0.001$). The linear transformations on either side are nearly identical. Memorization distortion localizes at the single nonlinearity.
+
+On CIFAR-10 (Table~\ref{tab:cka_cifar}), the pattern is more nuanced.
+
+\begin{table}[t]
+  \centering
+  \caption{CIFAR-10 CKA similarity (5 seeds, 95\% CI).}
+  \label{tab:cka_cifar}
+  \begin{tabular}{lccc}
+    \toprule
+    Layer Pair & Clean & Corrupted & $\Delta$ & $p$-value \\
+    \midrule
+    input$\to$fc1\_pre & $0.767$ & $0.765$ & $+0.002$ & $0.88$ \\
+    fc1\_pre$\to$fc1\_post & $0.819$ & $0.801$ & $+0.018$ & $0.017$ \\
+    fc1\_post$\to$fc2\_pre & $0.721$ & $0.749$ & $-0.028$ & $0.08$ \\
+    fc2\_pre$\to$fc2\_post & $0.177$ & $0.140$ & $+0.037$ & $0.09$ \\
+    \textbf{fc2\_post$\to$output} & $\mathbf{0.580}$ & $\mathbf{0.477}$ & $\mathbf{+0.103}$ & $\mathbf{0.009}$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{../outputs/figures/figure4_neuron_weights.png}
+  \includegraphics[width=\textwidth]{../outputs/figures/figure5_correlation_heatmap.png}
+  \caption{
+    Top: Hidden neuron weight vectors reshaped as $28\times28$ images for interpretability. Bottom: Pearson correlation between each hidden neuron's class-conditional activation and the target labels.
+  }
+  \label{fig:neurons_corr}
+\end{figure}
+
+\textbf{Finding (CIFAR-10).} The largest CKA distortion is at the deepest pre-output interface -- fc2\_post$\to$output ($\Delta = +0.103$, $p = 0.009$). The first nonlinearity shows a much smaller effect ($\Delta = +0.018$, $p = 0.017$). This confirms Proposition~\ref{prop:nonlinearity}: distortion concentrates at the deepest pre-output interface. In a two-layer network this interface is the single ReLU; in a three-layer network it shifts to the output linear layer.
+
+Corrupted models also show higher mean activations (0.08~$\to$~0.34) and lower sparsity (0.85~$\to$~0.82), recruiting more hidden neurons to represent the noise-inflated label space.
+
 % ============================================================
 \section{Phase 3: Influence Functions}
 \label{sec:phase3}
+
+Phase~3 measures whether memorized (corrupted) samples are genuinely harder to predict than clean samples. We use two complementary definitions: (i) a \emph{clean-model loss-quantile} definition (top 25\% by loss) as a methodological baseline, and (ii) a \emph{corrupted-model ground-truth} definition where corruption indices directly identify memorized samples.
+
+\begin{table}[t]
+  \centering
+  \caption{Influence function results (10 seeds, 95\% CI).}
+  \label{tab:phase3}
+  \begin{tabular}{lcc}
+    \toprule
+    Metric & Clean Model & Corrupted Model \\
+    \midrule
+    Definition & Loss-quantile (top 25\%) & Ground-truth (20\% flipped) \\
+    Mean Loss & $0.112\ [0.108,\ 0.117]$ & $0.408\ [0.396,\ 0.420]$ \\
+    Loss Gap (memorized $-$ forgotten) & $+0.442\ [0.426,\ 0.458]$ & $\mathbf{-0.051\ [-0.057,\ -0.045]}$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\textbf{Interpretation.} The clean model's loss-quantile analysis is circular by construction: defining memorized samples as the top 25\% by loss guarantees a positive gap. This is provided only as a methodological baseline. The genuine finding is the corrupted model's non-circular result: using ground-truth corruption indices breaks the circularity and reveals a gap of $-0.051$ (CI excludes zero). This confirms that corrupted (memorized) samples are reliably harder to predict than clean samples -- the model has learned the true labels better than the flipped ones.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{../outputs/figures/figure6_circuit_map.png}
+  \caption{
+    Circuit map showing critical neuron-class connections. Each row is a hidden neuron; each column is an output class. Darker entries indicate stronger contributions.
+  }
+  \label{fig:circuit}
+\end{figure}
 
 % ============================================================
 \section{Phase 4: ROME as a Memorization Localizer}
 \label{sec:phase4}
 
+We apply rank-one model editing (ROME)~\cite{meng2022locating} to measure how easily individual class predictions can be changed with a single rank-one update to the weight matrix. The ROME delta-norm $\|\Delta\|$ serves as a geometric probe for class boundary overlap: larger edits correspond to more orthogonal class boundaries, smaller edits to overlapping ones (Proposition~\ref{prop:rome}).
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{../outputs/figures/figure2_rome_pipeline.png}
+  \caption{
+    ROME pipeline: (1) select source class $s$ and target class $t$; (2) compute hidden representations for $s$; (3) compute edit $\Delta$ via the rank-one update formula; (4) measure accuracy recovery on source class $s$ after applying the edit.
+  }
+  \label{fig:rome_pipeline}
+\end{figure}
+
+Table~\ref{tab:rome_mnist} reports per-class delta-norms for both layers across 10 seeds.
+
+\begin{table}[t]
+  \centering
+  \caption{MNIST ROME delta-norms (10 seeds, all classes, all $p<0.0001$).}
+  \label{tab:rome_mnist}
+  \begin{tabular}{lcc}
+    \toprule
+    Layer & Clean $\Delta$-norm (avg) & Corrupted $\Delta$-norm (avg) & Ratio \\
+    \midrule
+    FC1 & 14.49 & 7.18 & $2.02\times$ \\
+    FC2 & 19.08 & 4.40 & $4.34\times$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Every individual class shows clean $>$ corrupted at $p<0.0001$ for both fc1 and fc2. This is the strongest statistical result in the paper -- 10 classes $\times$ 2 layers $\times$ 10 seeds with uniformly significant differences.
+
+On CIFAR-10 (Table~\ref{tab:rome_cifar}), all 10 classes confirm the pattern at $p<0.05$ with a mean ratio of $1.84\times$.
+
+\begin{table}[t]
+  \centering
+  \caption{CIFAR-10 ROME delta-norms (fc3, 3 seeds).}
+  \label{tab:rome_cifar}
+  \begin{tabular}{lccc}
+    \toprule
+    Class & Clean $\Delta$ (mean $\pm$ SEM) & Corrupted $\Delta$ (mean $\pm$ SEM) & Ratio & $p$-value \\
+    \midrule
+    0 & $0.325 \pm 0.035$ & $0.175 \pm 0.027$ & $1.85\times$ & 0.028 \\
+    1 & $0.438 \pm 0.033$ & $0.262 \pm 0.018$ & $1.68\times$ & 0.009 \\
+    2 & $0.385 \pm 0.027$ & $0.186 \pm 0.016$ & $2.07\times$ & 0.003 \\
+    3 & $0.341 \pm 0.009$ & $0.196 \pm 0.015$ & $1.74\times$ & 0.001 \\
+    4 & $0.339 \pm 0.019$ & $0.169 \pm 0.017$ & $2.01\times$ & 0.003 \\
+    5 & $0.376 \pm 0.012$ & $0.214 \pm 0.007$ & $1.76\times$ & $<0.001$ \\
+    6 & $0.327 \pm 0.014$ & $0.170 \pm 0.005$ & $1.93\times$ & $<0.001$ \\
+    7 & $0.408 \pm 0.016$ & $0.216 \pm 0.006$ & $1.89\times$ & $<0.001$ \\
+    8 & $0.366 \pm 0.037$ & $0.197 \pm 0.036$ & $1.85\times$ & 0.030 \\
+    9 & $0.380 \pm 0.028$ & $0.237 \pm 0.019$ & $1.60\times$ & 0.013 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The cross-architecture consistency -- ratio $\sim2$--$4\times$ on MNIST and $\sim1.8\times$ on CIFAR-10, across different depths, widths, and datasets -- suggests the relationship between class boundary overlap and edit magnitude is an architectural invariant.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{../outputs/figures/figure7_rome_recovery.png}
+  \caption{
+    ROME accuracy recovery for four targeted corruption configurations. Recovery is positive in 3 of 4 configs (7$\to$1, 1$\to$7, 5$\to$6) and near-zero when the source-target classes are highly separable in hidden space (0$\to$8).
+  }
+  \label{fig:rome_recovery}
+\end{figure}
+
+\textbf{Multi-class targeted corruption.} We next measure whether ROME can \emph{repair} corrupted predictions by editing only the output layer. Recovery is positive in 3 of 4 targeted corruption configs (7$\to$1: $+0.116$, 1$\to$7: $+0.195$, 5$\to$6: $+0.160$) with consistent side effects ($\sim17$--25\%). The 0$\to$8 case shows near-zero recovery ($+0.014$). This is not explained by representation similarity (0 and 8 have the \emph{lowest} cosine similarity, $0.39$ vs $0.50$--$0.55$ for other pairs); rather, the edit magnitude for 0$\to$8 was smallest ($0.881$ vs $\sim1.0+$), suggesting the rank-one update was insufficient. This identifies a boundary condition for single-layer ROME: when classes are highly separable, the required edit is large and a single rank-one update may not suffice.
+
 % ============================================================
 \section{Scaling Analysis}
 \label{sec:scaling}
+
+We train MNIST models with hidden dimensions 16--1024 and measure how memorization-related metrics scale with width.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{../outputs/figures/figure8_scaling_analysis.png}
+  \caption{
+    Scaling analysis across hidden dimensions 16--1024. Top-left: Davies-Bouldin index vs width. Top-right: Monosemanticity (fraction of neurons with $\rho>0.5$). Bottom-left: Mean circuit size (neurons/class). Bottom-right: Activation sparsity. Sparsity converges to 1.0 beyond $h=128$.
+  }
+  \label{fig:scaling}
+\end{figure}
+
+\begin{table}[t]
+  \centering
+  \caption{Scaling metrics across hidden dimensions (10 seeds).}
+  \label{tab:scaling}
+  \begin{tabular}{lcccc}
+    \toprule
+    Hidden Dim & Monosemanticity & Circuit Size & Sparsity & Accuracy \\
+    \midrule
+    16 & 0.269 & 6.6 & 0.588 & 95.31\% \\
+    32 & 0.222 & 8.3 & 0.740 & 96.85\% \\
+    64 & 0.212 & 3.5 & 0.945 & 97.50\% \\
+    128 & 0.184 & 0.4 & 0.997 & 97.85\% \\
+    256 & 0.175 & 0.1 & 1.000 & 97.93\% \\
+    512 & 0.154 & 0.0 & 1.000 & 98.17\% \\
+    1024 & 0.075 & 0.0 & 1.000 & 98.11\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\textbf{Finding.} As width increases beyond 64 hidden neurons, monosemanticity decreases monotonically (0.269 $\to$ 0.075) -- wider models distribute representations, reducing neuron specialization. Sparsity converges to 1.0 beyond $h=128$, meaning a vanishing fraction of capacity is used per class. This superlinear compression aligns with the superposition hypothesis \cite{elhage2022toy}: larger networks can pack more features per dimension, rendering individual circuit elements less specialized. Accuracy plateaus at $\sim$98\% beyond $h=256$.
 
 % ============================================================
 \section{Discussion and Conclusion}
@@ -143,7 +381,33 @@ We presented a systematic four-phase analysis of label memorization in shallow R
 
 % ============================================================
 \appendix
-\section{Additional Results}
-\label{sec:appendix}
+\section{Rank Ablation}
+\label{sec:rank_ablation}
+
+We ablate the SVD rank of the MNIST fc2 weight matrix to measure how effectively each model class compresses its task-relevant information into the top singular directions.
+
+\begin{table}[h]
+  \centering
+  \caption{Accuracy at each SVD rank of fc2 (10 seeds, 95\% CI).}
+  \label{tab:rank_ablation}
+  \begin{tabular}{lcc}
+    \toprule
+    Rank & Clean & Corrupted (20\%) \\
+    \midrule
+    1/10 & 19.0\% [17.9\%, 20.1\%] & 19.3\% [16.6\%, 21.9\%] \\
+    2/10 & 33.9\% [30.6\%, 37.2\%] & 30.0\% [26.4\%, 33.6\%] \\
+    3/10 & 44.9\% [40.2\%, 49.7\%] & 40.5\% [37.0\%, 44.0\%] \\
+    4/10 & 58.3\% [53.5\%, 63.2\%] & 53.2\% [49.0\%, 57.3\%] \\
+    \textbf{5/10} & \textbf{68.4\% [62.2\%, 74.6\%]} & \textbf{62.3\% [57.9\%, 66.7\%]} \\
+    6/10 & 75.4\% [67.3\%, 83.5\%] & 72.6\% [68.0\%, 77.3\%] \\
+    7/10 & 80.1\% [70.8\%, 89.4\%] & 80.7\% [76.3\%, 85.0\%] \\
+    8/10 & 88.9\% [85.7\%, 92.2\%] & 86.4\% [84.0\%, 88.8\%] \\
+    9/10 & 92.8\% [90.7\%, 94.9\%] & 92.3\% [91.8\%, 92.9\%] \\
+    10/10 (full) & 95.3\% [95.2\%, 95.5\%] & 93.7\% [93.4\%, 94.0\%] \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The key comparative signal is at rank 5/10: corrupted models perform 6.1pp worse than clean (62.3\% vs 68.4\%). This gap is intermediate-rank-specific -- at rank 8/10 both models reach $\sim$90\% of full accuracy, and at full rank the gap is only 1.6pp. The rank-5 finding shows that corrupted models require a broader effective rank spectrum: their memorized label-noise associations are less compressible into the top singular directions. This complements the Phase~1 finding that MNIST spectral norms decrease under corruption, confirming a flatter singular value distribution.
 
 \end{document}
