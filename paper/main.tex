@@ -358,7 +358,7 @@ We train MNIST models with hidden dimensions 16--1024 and measure how memorizati
   \centering
   \includegraphics[width=\textwidth]{../outputs/figures/figure8_scaling_analysis.png}
   \caption{
-    Scaling analysis across hidden dimensions 16--1024. Top-left: Davies-Bouldin index vs width. Top-right: Monosemanticity (fraction of neurons with $\rho>0.5$). Bottom-left: Mean circuit size (neurons/class). Bottom-right: Activation sparsity. Sparsity converges to 1.0 beyond $h=128$.
+    Scaling analysis across hidden dimensions 16--1024. Top-left: FDR (Fisher discriminant ratio, tr(S$_B$)/tr(S$_W$)). Top-right: Monosemanticity (fraction of neurons with $\rho>0.5$). Bottom-left: Mean circuit size (neurons/class). Bottom-right: Activation sparsity. Sparsity converges to 1.0 beyond $h=128$.
   }
   \label{fig:scaling}
 \end{figure}

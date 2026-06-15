@@ -26,7 +26,7 @@ Empirical values reflect hidden_dim=16 architecture (784→16→10), 10 seeds, 9
 
 | Result | File | Function |
 |--------|------|----------|
-| Davies-Bouldin index (replaces σ) | `src/utils/metrics.py` | `compute_davies_bouldin()` |
+| Fisher discriminant ratio (FDR = tr(S_B)/tr(S_W)) | `src/utils/metrics.py` | `compute_fdr()` |
 | Weight norms (Frobenius + spectral) | `src/analysis/phase1_basic.py` | `compute_weight_norms()` |
 | Gradient norms | `src/analysis/phase1_basic.py` | `compute_gradient_norms()` |
 | Epoch-wise accuracy/loss curves | `src/analysis/phase1_basic.py` | Training loop in `main()` |
@@ -63,7 +63,7 @@ Empirical values reflect hidden_dim=16 architecture (784→16→10), 10 seeds, 9
 | Result | File | Function |
 |--------|------|----------|
 | Train models across widths (16–256) | `src/scaling/train_scaling.py` | `main()` |
-| Scaling metrics (FDR, DB index, mono, sparsity vs width) | `src/scaling/analyze_scaling.py` | `run_scaling_analysis()` |
+| Scaling metrics (FDR, monosemanticity, circuit size, sparsity vs width) | `src/scaling/analyze_scaling.py` | `run_scaling_analysis()` |
 | Power-law fit | `src/scaling/analyze_scaling.py` | `power_law()`, `curve_fit` |
 
 ## Statistical Validation
@@ -86,7 +86,7 @@ Empirical values reflect hidden_dim=16 architecture (784→16→10), 10 seeds, 9
 | 5 | Neuron-class correlation heatmap | `figure5_correlation_heatmap()` |
 | 6 | Circuit map (critical neuron-class connections) | `figure6_circuit_map()` |
 | 7 | ROME accuracy recovery bar chart | `figure7_rome_recovery()` |
-| 8 | Scaling analysis (DB index, mono, circuit, sparsity vs width) | `figure8_scaling_analysis()` |
+| 8 | Scaling analysis (FDR, monosemanticity, circuit size, sparsity vs width) | `figure8_scaling_analysis()` |
 
 ## Related Work
 
