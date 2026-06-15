@@ -13,7 +13,7 @@ import json
 
 import sys
 sys.path.append(str(Path(__file__).parent.parent))
-from models.model import MNISTNet
+from models.model import MNISTNet, CIFAR10MLP
 from utils.stats import compute_ci
 
 
@@ -24,21 +24,32 @@ def get_low_rank_approximation(W, k):
     return W_k, S
 
 
-def apply_rank_ablation(model, layer_name, k):
-    """Replace weight matrix with rank-k approximation."""
+def _get_weight(model, layer_name):
+    if layer_name == 'fc1':
+        return model.fc1.weight.data
+    elif layer_name == 'fc2':
+        return model.fc2.weight.data
+    elif layer_name == 'fc3':
+        return model.fc3.weight.data
+    raise ValueError(f"Unknown layer: {layer_name}")
+
+
+def _set_weight(model, layer_name, W):
     with torch.no_grad():
         if layer_name == 'fc1':
-            W = model.fc1.weight.data
-            W_k, S = get_low_rank_approximation(W, k)
-            model.fc1.weight.data.copy_(W_k)
-            return S
+            model.fc1.weight.data.copy_(W)
         elif layer_name == 'fc2':
-            W = model.fc2.weight.data
-            W_k, S = get_low_rank_approximation(W, k)
-            model.fc2.weight.data.copy_(W_k)
-            return S
-        else:
-            raise ValueError(f"Unknown layer: {layer_name}")
+            model.fc2.weight.data.copy_(W)
+        elif layer_name == 'fc3':
+            model.fc3.weight.data.copy_(W)
+
+
+def apply_rank_ablation(model, layer_name, k):
+    """Replace weight matrix with rank-k approximation."""
+    W = _get_weight(model, layer_name)
+    W_k, S = get_low_rank_approximation(W, k)
+    _set_weight(model, layer_name, W_k)
+    return S
 
 
 def evaluate_model(model, dataloader, device, criterion):
@@ -63,24 +74,14 @@ def evaluate_model(model, dataloader, device, criterion):
 def get_singular_values(model, layer_name):
     """Get singular values of weight matrix."""
     with torch.no_grad():
-        if layer_name == 'fc1':
-            W = model.fc1.weight.data
-        elif layer_name == 'fc2':
-            W = model.fc2.weight.data
-        else:
-            raise ValueError(f"Unknown layer: {layer_name}")
-        
+        W = _get_weight(model, layer_name)
         U, S, Vh = torch.linalg.svd(W, full_matrices=False)
         return S.cpu().numpy()
 
 
 def run_rank_ablation(model, train_loader, test_loader, device, criterion, layer_name, max_rank=None):
     """Run rank ablation for a specific layer."""
-    # Get original weight and singular values
-    if layer_name == 'fc1':
-        W_orig = model.fc1.weight.data.clone()
-    else:
-        W_orig = model.fc2.weight.data.clone()
+    W_orig = _get_weight(model, layer_name).clone()
 
     U, S, Vh = torch.linalg.svd(W_orig, full_matrices=False)
     full_rank = len(S)
@@ -104,13 +105,8 @@ def run_rank_ablation(model, train_loader, test_loader, device, criterion, layer
     }
 
     for k in ranks:
-        # Compute rank-k approximation from original U, S, Vh
         W_k = (U[:, :k] * S[:k]) @ Vh[:k, :]
-        with torch.no_grad():
-            if layer_name == 'fc1':
-                model.fc1.weight.data.copy_(W_k)
-            else:
-                model.fc2.weight.data.copy_(W_k)
+        _set_weight(model, layer_name, W_k)
 
         # Evaluate
         train_loss, train_acc = evaluate_model(model, train_loader, device, criterion)
@@ -123,12 +119,7 @@ def run_rank_ablation(model, train_loader, test_loader, device, criterion, layer
 
         print(f"  Rank {k}/{full_rank}: Train Acc={train_acc:.2f}%, Test Acc={test_acc:.2f}%")
 
-    # Restore original weights
-    with torch.no_grad():
-        if layer_name == 'fc1':
-            model.fc1.weight.data.copy_(W_orig)
-        else:
-            model.fc2.weight.data.copy_(W_orig)
+    _set_weight(model, layer_name, W_orig)
 
     return results
 
@@ -253,7 +244,7 @@ def main():
     parser.add_argument('--checkpoint-dir', type=str, required=True)
     parser.add_argument('--output-dir', type=str, default='outputs/analysis/rank_ablation')
     parser.add_argument('--seeds', type=int, nargs='+', default=list(range(5)))
-    parser.add_argument('--layer', type=str, default='fc2', choices=['fc1', 'fc2'])
+    parser.add_argument('--layer', type=str, default='fc2', choices=['fc1', 'fc2', 'fc3'])
     args = parser.parse_args()
     
     with open(args.config, 'r') as f:

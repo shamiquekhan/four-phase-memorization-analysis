@@ -174,6 +174,49 @@ def compute_memorization_score(model, train_loader, device,
     }
 
 
+def compute_gradient_alignment(model, dataloader, corrupt_indices, device='cpu'):
+    """
+    Measure cosine similarity between gradients from genuine vs corrupted samples.
+    Near-zero or negative alignment confirms the anti-alignment prediction
+    from the CKA theory argument.
+
+    Returns:
+        mean_cos_sim: float, cosine similarity of gradients at fc1
+    """
+    model.eval()
+    genuine_grad = None
+    corrupt_grad = None
+
+    for batch_idx, (x, y) in enumerate(dataloader):
+        idx = list(range(batch_idx * dataloader.batch_size,
+                         batch_idx * dataloader.batch_size + len(x)))
+        x, y = x.to(device), y.to(device)
+        is_corrupt = torch.tensor([i in corrupt_indices for i in idx])
+
+        for flag, mask in [(False, ~is_corrupt), (True, is_corrupt)]:
+            if mask.sum() == 0:
+                continue
+            x_sub, y_sub = x[mask], y[mask]
+            model.zero_grad()
+            loss = torch.nn.functional.cross_entropy(model(x_sub), y_sub)
+            loss.backward()
+            g = model.fc1.weight.grad.detach().clone().flatten()
+            if flag:
+                corrupt_grad = g if corrupt_grad is None else corrupt_grad + g
+            else:
+                genuine_grad = g if genuine_grad is None else genuine_grad + g
+
+    if genuine_grad is None or corrupt_grad is None:
+        return None
+
+    cos_sim = torch.nn.functional.cosine_similarity(
+        genuine_grad.unsqueeze(0),
+        corrupt_grad.unsqueeze(0)
+    ).item()
+
+    return cos_sim
+
+
 def get_data_loaders(batch_size=128, num_workers=4):
     transform = transforms.Compose([
         transforms.ToTensor(),
@@ -254,17 +297,25 @@ def main():
         memo_results = compute_memorization_score(model, train_loader, device,
                                                    corrupted_indices=corrupted_indices)
         
+        # Gradient alignment (CKA theory validation)
+        if corrupted_indices is not None and len(corrupted_indices) > 0:
+            grad_align = compute_gradient_alignment(model, train_loader, corrupted_indices, device)
+            memo_results['gradient_alignment'] = grad_align
+        else:
+            memo_results['gradient_alignment'] = None
+        
         all_results[seed] = {'memorization': memo_results}
         
+        align_str = f", GradAlign={memo_results['gradient_alignment']:.4f}" if memo_results['gradient_alignment'] is not None else ""
         print(f"Seed {seed}: Acc={memo_results['accuracy']:.4f}, "
               f"Memorized={memo_results['memorized_fraction']:.4f}, "
               f"Forgotten={memo_results['forgotten_fraction']:.4f}, "
-              f"LossGap={memo_results['loss_gap']:.4f}")
+              f"LossGap={memo_results['loss_gap']:.4f}{align_str}")
     
     # Aggregate
     print("\n=== Aggregated Memorization Results ===")
-    for metric in ['accuracy', 'memorized_fraction', 'forgotten_fraction', 'loss_gap', 'mean_loss']:
-        values = [all_results[s]['memorization'][metric] for s in args.seeds if all_results[s]]
+    for metric in ['accuracy', 'memorized_fraction', 'forgotten_fraction', 'loss_gap', 'mean_loss', 'gradient_alignment']:
+        values = [all_results[s]['memorization'][metric] for s in args.seeds if all_results[s] and all_results[s]['memorization'].get(metric) is not None]
         if values:
             mean, ci_low, ci_high = compute_ci(values)
             print(f"{metric}: {mean:.4f} [{ci_low:.4f}, {ci_high:.4f}]")

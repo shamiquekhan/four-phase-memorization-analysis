@@ -48,6 +48,7 @@ Standard supervised learning on MNIST (60k train, 10k test). 10 random seeds for
   - Frobenius norm of weight matrices (`||W||_F`)
   - Spectral norm of weight matrices (`||W||_2`)
   - Gradient norm at the end of training
+  - Fisher discriminant ratio (FDR = tr(S_B)/tr(S_W), dimension-invariant class separability)
   - Training/Test accuracy and loss
 - **Method**: Load final checkpoint, compute norms via PyTorch, aggregate with 95% CI
 
@@ -82,7 +83,7 @@ Standard supervised learning on MNIST (60k train, 10k test). 10 random seeds for
 
 - Hidden dimensions tested: [16, 32, 64, 128, 256, 512, 1024]
 - Metrics tracked vs hidden dimension:
-  - Davies-Bouldin index (class separability; dimension-invariant, replaces σ)
+  - Fisher discriminant ratio (FDR = tr(S_B)/tr(S_W), dimension-invariant class separability)
   - Monosemanticity fraction (fraction of neurons with max correlation > threshold)
   - Circuit size (neurons needed per class decision, via critical neuron ablation)
   - Network sparsity (fraction of near-zero weights)

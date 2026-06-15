@@ -28,6 +28,73 @@ def linear_cka(X: torch.Tensor, Y: torch.Tensor) -> float:
     return (hsic_xy / torch.sqrt(hsic_xx * hsic_yy)).item()
 
 
+def compute_fdr(activations: torch.Tensor, labels: torch.Tensor) -> float:
+    """
+    Fisher discriminant ratio: tr(S_B) / tr(S_W).
+    Dimension-invariant class separability measure.
+
+    Args:
+        activations: (N, H) hidden-layer activations
+        labels:      (N,)   integer class labels (0..C-1)
+
+    Returns:
+        fdr: scalar float
+    """
+    activations = activations.float()
+    classes = labels.unique()
+    C = len(classes)
+    H = activations.shape[1]
+
+    global_mean = activations.mean(0)          # (H,)
+
+    S_W = torch.zeros(H, H, device=activations.device)
+    S_B = torch.zeros(H, H, device=activations.device)
+
+    for c in classes:
+        mask = labels == c
+        X_c = activations[mask]
+        mu_c = X_c.mean(0)
+        n_c = X_c.shape[0]
+
+        diff_W = X_c - mu_c
+        S_W += diff_W.T @ diff_W
+
+        diff_B = (mu_c - global_mean).unsqueeze(1)
+        S_B += n_c * (diff_B @ diff_B.T)
+
+    tr_SW = torch.trace(S_W).item()
+    tr_SB = torch.trace(S_B).item()
+
+    if tr_SW < 1e-10:
+        return float('inf')
+
+    return tr_SB / tr_SW
+
+
+def compute_sigma_and_fdr(activations: np.ndarray, labels: np.ndarray) -> dict:
+    """Return both σ (legacy) and FDR (new primary metric)."""
+    classes = np.unique(labels)
+    within_dists, between_dists = [], []
+    class_means = {}
+
+    for c in classes:
+        X_c = activations[labels == c]
+        mu_c = X_c.mean(0)
+        class_means[c] = mu_c
+        diffs = X_c - mu_c
+        within_dists.append(np.mean(np.linalg.norm(diffs, axis=1)))
+
+    class_list = list(class_means.values())
+    for i in range(len(class_list)):
+        for j in range(i + 1, len(class_list)):
+            between_dists.append(np.linalg.norm(class_list[i] - class_list[j]))
+
+    sigma = (sum(within_dists) / len(within_dists)) / (sum(between_dists) / len(between_dists))
+    fdr = compute_fdr(torch.from_numpy(activations), torch.from_numpy(labels))
+
+    return {"sigma": sigma, "fdr": fdr}
+
+
 def compute_davies_bouldin(activations: np.ndarray, labels: np.ndarray) -> float:
     """
     Davies-Bouldin index - dimension-invariant cluster separability metric.

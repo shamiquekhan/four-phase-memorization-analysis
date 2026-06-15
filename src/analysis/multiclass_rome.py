@@ -12,6 +12,7 @@ from pathlib import Path
 import numpy as np
 import json
 
+from copy import deepcopy
 import sys
 sys.path.append(str(Path(__file__).parent.parent))
 from models.model import MNISTNet
@@ -105,6 +106,91 @@ def apply_rome_edit(model, delta, layer='fc2'):
             model.fc2.weight.data += delta
         elif layer == 'fc1':
             model.fc1.weight.data += delta
+
+
+def apply_random_edit(model, layer_name: str, delta_norm: float, seed: int = None):
+    """
+    Apply a random rank-one edit of exactly delta_norm Frobenius norm
+    to the named weight matrix. Used as null baseline for ROME.
+
+    Args:
+        model:       trained MNISTNet (or CIFARNet)
+        layer_name:  'fc1' or 'fc2' or 'fc3'
+        delta_norm:  target Frobenius norm of the perturbation (match ROME's delta)
+        seed:        random seed for reproducibility
+
+    Returns:
+        edited model (deep copy, original unchanged)
+    """
+    if seed is not None:
+        torch.manual_seed(seed)
+
+    model_copy = deepcopy(model)
+    W = getattr(model_copy, layer_name).weight.data
+
+    u = torch.randn(W.shape[1])
+    v = torch.randn(W.shape[0])
+    u = u / u.norm()
+    v = v / v.norm()
+
+    delta = delta_norm * torch.outer(v, u)
+    W.add_(delta)
+
+    return model_copy
+
+
+def run_rome_with_random_baseline(
+    model,
+    dataloader,
+    src_class: int,
+    tgt_class: int,
+    layer_name: str = 'fc2',
+    n_random_trials: int = 20,
+    device: str = 'cpu'
+) -> dict:
+    """
+    Run ROME edit and compare to random rank-one baseline.
+
+    Returns dict with:
+        rome_recovery:   accuracy gain on src_class after ROME edit
+        random_recovery_mean: mean accuracy gain across n_random_trials random edits
+        random_recovery_std: std of random recovery
+        delta_norm:      Frobenius norm of ROME edit (used for random baseline)
+        signal_ratio:    rome_recovery / random_recovery_mean (> 1 means ROME beats noise)
+    """
+    baseline_acc = evaluate_class_accuracy(model, dataloader, src_class, device)
+
+    # ROME edit
+    delta, u, v, used_layer = compute_rome_edit(model, dataloader, device, tgt_class, layer_name)
+    if delta is None:
+        return {"error": "ROME edit failed"}
+    delta_norm = delta.norm(p='fro').item()
+
+    W_orig = getattr(model, used_layer).weight.data.clone()
+    apply_rome_edit(model, delta, used_layer)
+    rome_acc = evaluate_class_accuracy(model, dataloader, src_class, device)
+    getattr(model, used_layer).weight.data.copy_(W_orig)
+    rome_recovery = rome_acc - baseline_acc
+
+    # Random baseline
+    random_recoveries = []
+    for trial in range(n_random_trials):
+        model_rand = apply_random_edit(model, used_layer, delta_norm, seed=trial)
+        rand_acc = evaluate_class_accuracy(model_rand, dataloader, src_class, device)
+        random_recoveries.append(rand_acc - baseline_acc)
+
+    random_mean = float(np.mean(random_recoveries))
+    random_std = float(np.std(random_recoveries))
+    signal_ratio = rome_recovery / abs(random_mean) if abs(random_mean) > 1e-6 else float('inf')
+
+    return {
+        "rome_recovery": rome_recovery,
+        "random_recovery_mean": random_mean,
+        "random_recovery_std": random_std,
+        "delta_norm": delta_norm,
+        "signal_ratio": signal_ratio,
+        "n_random_trials": n_random_trials,
+    }
 
 
 def find_broken_class(model, test_loader, device):
@@ -201,6 +287,7 @@ def main():
     # Run ROME on each corruption config
     all_results = {}
     multi_results = {}
+    random_baseline_results = {}
     for cfg in corruption_configs:
         label = cfg['label']
         target = cfg['source']
@@ -210,6 +297,8 @@ def main():
         multi_results[label] = {'fc2_only': {'recovery': [], 'side_effects': [], 'magnitude': []},
                                 'fc1_only': {'recovery': [], 'side_effects': [], 'magnitude': []},
                                 'both_layers': {'recovery': [], 'side_effects': [], 'magnitude': []}}
+        random_baseline_results[label] = {'rome_recovery': [], 'random_mean': [],
+                                           'random_std': [], 'signal_ratio': []}
 
         for seed in args.seeds:
             ckpt_path = Path(args.checkpoint_dir) / f"src{cfg['source']}_tgt{cfg['target']}" / f"seed_{seed}" / 'final_model.pt'
@@ -240,6 +329,17 @@ def main():
                 multi_results[label][k]['recovery'].append(layer_results[k]['recovery'])
                 multi_results[label][k]['side_effects'].append(layer_results[k]['side_effects'])
                 multi_results[label][k]['magnitude'].append(layer_results[k]['magnitude'])
+
+            # Random baseline comparison
+            random_baseline = run_rome_with_random_baseline(
+                deepcopy(model), test_loader, target, target,
+                layer_name='fc2', n_random_trials=20, device=device
+            )
+            if 'error' not in random_baseline:
+                random_baseline_results[label]['rome_recovery'].append(random_baseline['rome_recovery'])
+                random_baseline_results[label]['random_mean'].append(random_baseline['random_recovery_mean'])
+                random_baseline_results[label]['random_std'].append(random_baseline['random_recovery_std'])
+                random_baseline_results[label]['signal_ratio'].append(random_baseline['signal_ratio'])
 
             print(f"  seed={seed} fc2={layer_results['fc2_only']['recovery']:.4f} "
                   f"fc1={layer_results['fc1_only']['recovery']:.4f} "
@@ -272,10 +372,28 @@ def main():
                   f"{s_mean:.4f} [{s_lo:.4f}, {s_hi:.4f}]  "
                   f"{m_mean:.4f} [{m_lo:.4f}, {m_hi:.4f}]")
 
+    # Random baseline summary
+    print("\n=== RANDOM BASELINE SUMMARY (fc2) ===")
+    header = f"{'Config':>8} {'ROME Rec':>12} {'Random Rec':>14} {'Signal Ratio':>14}"
+    print(header)
+    print('-' * len(header))
+    for label in random_baseline_results:
+        r = random_baseline_results[label]
+        if r['rome_recovery']:
+            rome_mean = np.mean(r['rome_recovery'])
+            rand_mean = np.mean(r['random_mean'])
+            rand_std = np.mean(r['random_std'])
+            sig_ratio = np.mean(r['signal_ratio'])
+            print(f"{label:>8}  {rome_mean:+.4f}       {rand_mean:.4f}±{rand_std:.4f}  {sig_ratio:.1f}×")
+        else:
+            print(f"{label:>8}  (no data)")
+
     with open(output_dir / 'multiclass_rome_results.json', 'w') as f:
         json.dump(all_results, f, indent=2, default=str)
     with open(output_dir / 'multilayer_rome_comparison.json', 'w') as f:
         json.dump(multi_results, f, indent=2, default=str)
+    with open(output_dir / 'random_baseline_results.json', 'w') as f:
+        json.dump(random_baseline_results, f, indent=2, default=str)
 
     print(f"\nResults saved to {output_dir}")
 

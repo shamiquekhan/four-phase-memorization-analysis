@@ -9,7 +9,8 @@
       "loss_gap": -0.030804455280303955,
       "memorized_mean_loss": 0.4390653967857361,
       "non_memorized_mean_loss": 0.40826094150543213,
-      "definition": "ground_truth"
+      "definition": "ground_truth",
+      "gradient_alignment": 0.9952825307846069
     }
   },
   "1": {
@@ -22,7 +23,8 @@
       "loss_gap": -0.05840831995010376,
       "memorized_mean_loss": 0.45494234561920166,
       "non_memorized_mean_loss": 0.3965340256690979,
-      "definition": "ground_truth"
+      "definition": "ground_truth",
+      "gradient_alignment": 0.9926535487174988
     }
   },
   "2": {
@@ -35,7 +37,8 @@
       "loss_gap": -0.05582287907600403,
       "memorized_mean_loss": 0.4395587146282196,
       "non_memorized_mean_loss": 0.3837358355522156,
-      "definition": "ground_truth"
+      "definition": "ground_truth",
+      "gradient_alignment": 0.9932069778442383
     }
   },
   "3": {
@@ -48,7 +51,8 @@
       "loss_gap": -0.0529668927192688,
       "memorized_mean_loss": 0.48041871190071106,
       "non_memorized_mean_loss": 0.42745181918144226,
-      "definition": "ground_truth"
+      "definition": "ground_truth",
+      "gradient_alignment": 0.9958999752998352
     }
   },
   "4": {
@@ -61,7 +65,8 @@
       "loss_gap": -0.049416542053222656,
       "memorized_mean_loss": 0.45542582869529724,
       "non_memorized_mean_loss": 0.4060092866420746,
-      "definition": "ground_truth"
+      "definition": "ground_truth",
+      "gradient_alignment": 0.9947836995124817
     }
   }
 }

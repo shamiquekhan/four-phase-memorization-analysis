@@ -183,7 +183,31 @@ def main():
         cwd=root
     )
 
-    # Step 14: Final verification
+    # Step 14: Multi-layer ROME
+    for tag, checkpoint_dir in [('targeted_corrupted', f'{args.output_dir}/targeted_corrupted')]:
+        run(
+            f"python src/analysis/multilayer_rome.py --config {args.config} --checkpoint-dir {checkpoint_dir} --seeds {' '.join(map(str, seeds[:5]))} --output-dir {args.output_dir}/analysis/multilayer_rome",
+            "Multi-layer ROME (sequential + joint)",
+            cwd=root
+        )
+
+    # Step 14b: Random baseline for ROME
+    for tag, checkpoint_dir in [('targeted_corrupted', f'{args.output_dir}/targeted_corrupted')]:
+        run(
+            f"python src/analysis/multiclass_rome.py --config {args.config} --checkpoint-dir {checkpoint_dir} --seeds {' '.join(map(str, seeds[:5]))} --output-dir {args.output_dir}/analysis/multiclass_rome_{tag}",
+            "Multi-class ROME with random baseline",
+            cwd=root
+        )
+
+    # Step 15: CIFAR-10 replication (CKA, ROME, rank ablation)
+    if not args.skip_cifar10:
+        run(
+            f"python src/analysis/cifar_replication.py --clean-dir {args.output_dir}/cifar10/clean --corrupted-dir {args.output_dir}/cifar10/corrupted --seeds {' '.join(map(str, seeds[:5]))} --output-dir {args.output_dir}/cifar10/replication",
+            "CIFAR-10 replication (CKA + ROME + rank ablation)",
+            cwd=root
+        )
+
+    # Step 16: Final verification
     run("python scripts/verify_consistency.py", "Final consistency check", cwd=root)
     
     print(f"\n{'='*60}")

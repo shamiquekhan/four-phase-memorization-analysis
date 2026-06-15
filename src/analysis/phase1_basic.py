@@ -15,6 +15,7 @@ import sys
 sys.path.append(str(Path(__file__).parent.parent))
 from models.model import MNISTNet
 from utils.stats import compute_ci
+from utils.metrics import compute_sigma_and_fdr, extract_hidden_activations
 
 
 def load_model_and_history(checkpoint_path, config, device):
@@ -77,12 +78,18 @@ def analyze_checkpoint(model, history, dataloader, criterion, device, epoch):
     """Analyze a single checkpoint."""
     weight_norms = compute_weight_norms(model)
     grad_mean, grad_std = compute_gradient_norms(model, dataloader, criterion, device)
-    
+
+    # FDR and sigma from hidden activations
+    hidden_acts, labels = extract_hidden_activations(model, dataloader, device)
+    sf = compute_sigma_and_fdr(hidden_acts, labels)
+
     results = {
         'epoch': epoch,
         **weight_norms,
         'grad_norm_mean': grad_mean,
         'grad_norm_std': grad_std,
+        'sigma': sf['sigma'],
+        'fdr': sf['fdr'],
     }
     
     if history:

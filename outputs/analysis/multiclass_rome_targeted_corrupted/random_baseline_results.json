@@ -1,0 +1,30 @@
+{
+  "7->1": {
+    "rome_recovery_mean": 0.14124513618677043,
+    "rome_recovery_std": 0.08281724347466606,
+    "random_mean": 0.0,
+    "random_std": 0.0,
+    "signal_ratio": Infinity
+  },
+  "1->7": {
+    "rome_recovery_mean": 0.21744493392070482,
+    "rome_recovery_std": 0.06898942838733145,
+    "random_mean": 0.0,
+    "random_std": 0.0,
+    "signal_ratio": Infinity
+  },
+  "5->6": {
+    "rome_recovery_mean": 0.12040358744394619,
+    "rome_recovery_std": 0.03380820955151706,
+    "random_mean": 0.0,
+    "random_std": 0.0,
+    "signal_ratio": Infinity
+  },
+  "0->8": {
+    "rome_recovery_mean": 0.09714285714285714,
+    "rome_recovery_std": 0.06035229076361968,
+    "random_mean": 0.0,
+    "random_std": 0.0,
+    "signal_ratio": Infinity
+  }
+}

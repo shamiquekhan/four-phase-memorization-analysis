@@ -151,6 +151,44 @@ class TestMNISTNet:
         assert gelu_model(x).shape == (4, 10)
 
 
+class TestFDR:
+    """Tests for Fisher Discriminant Ratio metric."""
+
+    def test_fdr_perfect_separation(self):
+        from src.utils.metrics import compute_fdr
+        act = torch.tensor([[1.0, 0.0], [1.0, 0.1], [10.0, 0.0], [10.0, 0.1]])
+        labels = torch.tensor([0, 0, 1, 1])
+        fdr = compute_fdr(act, labels)
+        assert fdr > 0
+
+    def test_fdr_dimension_invariance(self):
+        from src.utils.metrics import compute_fdr
+        act = torch.randn(20, 4)
+        labels = torch.tensor([0]*10 + [1]*10)
+        fdr1 = compute_fdr(act, labels)
+        act_scaled = act * 2.0
+        fdr2 = compute_fdr(act_scaled, labels)
+        assert abs(fdr1 - fdr2) < 1e-6
+
+    def test_fdr_same_class(self):
+        from src.utils.metrics import compute_fdr
+        act = torch.randn(10, 4)
+        labels = torch.zeros(10, dtype=torch.long)
+        fdr = compute_fdr(act, labels)
+        assert fdr == 0.0  # no between-class separation with single class
+
+    def test_sigma_and_fdr_consistency(self):
+        from src.utils.metrics import compute_sigma_and_fdr
+        np.random.seed(42)
+        act = np.random.randn(50, 8)
+        labels = np.array([0]*25 + [1]*25)
+        result = compute_sigma_and_fdr(act, labels)
+        assert 'sigma' in result
+        assert 'fdr' in result
+        assert result['sigma'] > 0
+        assert result['fdr'] > 0
+
+
 class TestConfig:
     """Tests for configuration file."""
 

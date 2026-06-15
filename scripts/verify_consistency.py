@@ -86,13 +86,15 @@ def checks():
             if h_str not in scaling:
                 continue
             s = scaling[h_str]
-            # Find table row for this hidden dim (4 numeric columns: Mono, Circuit, Sparsity, Acc)
-            pattern = rf'\|\s*{h}\s+\|\s+([\d.]+)\s+\|\s+([\d.]+)\s+\|\s+([\d.]+)\s+\|\s+([\d.]+%?)'
+            # Find table row for this hidden dim (6 columns: FDR, σ, Mono, Circuit, Sparsity, Acc)
+            pattern = rf'\|\s*{h}\s+\|\s+([\d.]+)\s+\|\s+([\d.]+)\s+\|\s+([\d.]+)\s+\|\s+([\d.]+)\s+\|\s+([\d.]+)\s+\|\s+([\d.]+%?)'
             match = re.search(pattern, text)
             if match:
-                results_mono = float(match.group(1))
-                results_circuit = float(match.group(2))
-                results_sparsity = float(match.group(3))
+                results_fdr = float(match.group(1))
+                results_sigma = float(match.group(2))
+                results_mono = float(match.group(3))
+                results_circuit = float(match.group(4))
+                results_sparsity = float(match.group(5))
                 passed_local = 0
                 failed_local = 0
                 if abs(results_mono - s['mono_fraction_mean']) <= TOLERANCE:

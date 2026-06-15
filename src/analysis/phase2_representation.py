@@ -80,9 +80,9 @@ def analyze_representations(model, dataloader, device):
     
     return {
         'cka': {
-            'input_fc1_pre': cka_input_fc1pre.item(),
-            'fc1_pre_fc1_post': cka_fc1pre_fc1post.item(),
-            'fc1_post_output': cka_fc1post_output.item()
+            'input_fc1_pre': cka_input_fc1pre,
+            'fc1_pre_fc1_post': cka_fc1pre_fc1post,
+            'fc1_post_output': cka_fc1post_output
         },
         'activation_stats': stats,
         'pca_explained_variance': exp_var.tolist(),

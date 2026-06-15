@@ -16,7 +16,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 from models.model import MNISTNet
 from utils.metrics import (
     compute_davies_bouldin, compute_calinski_harabasz, compute_monosemanticity,
-    compute_circuit_sparsity, extract_hidden_activations
+    compute_circuit_sparsity, extract_hidden_activations, compute_sigma_and_fdr
 )
 from utils.stats import compute_ci
 
@@ -44,7 +44,8 @@ def run_scaling_analysis(results_dir, hidden_dims, seeds, device='cpu'):
         print(f"\n=== Analyzing hidden size: {h} ===")
         results[h] = {
             'davies_bouldin': [], 'calinski_harabasz': [], 'mono_fraction': [],
-            'avg_max_corr': [], 'circuit_size': [], 'sparsity': [], 'accuracy': []
+            'avg_max_corr': [], 'circuit_size': [], 'sparsity': [], 'accuracy': [],
+            'sigma': [], 'fdr': []
         }
 
         for seed in seeds:
@@ -64,6 +65,11 @@ def run_scaling_analysis(results_dir, hidden_dims, seeds, device='cpu'):
             ch = compute_calinski_harabasz(hidden_acts, labels)
             results[h]['davies_bouldin'].append(db)
             results[h]['calinski_harabasz'].append(ch)
+
+            # FDR and sigma (dimension-invariant separability + legacy)
+            sf = compute_sigma_and_fdr(hidden_acts, labels)
+            results[h]['sigma'].append(sf['sigma'])
+            results[h]['fdr'].append(sf['fdr'])
 
             # Phase 2: Representational (monosemanticity)
             mono, max_corrs = compute_monosemanticity(hidden_acts, labels)
@@ -90,7 +96,7 @@ def run_scaling_analysis(results_dir, hidden_dims, seeds, device='cpu'):
                   f"circuit={cs:.1f}, sparsity={sp:.3f}, acc={results[h]['accuracy'][-1]:.2f}%")
 
         # Aggregate
-        for metric in ['davies_bouldin', 'calinski_harabasz', 'mono_fraction', 'avg_max_corr', 'circuit_size', 'sparsity', 'accuracy']:
+        for metric in ['davies_bouldin', 'calinski_harabasz', 'mono_fraction', 'avg_max_corr', 'circuit_size', 'sparsity', 'accuracy', 'sigma', 'fdr']:
             vals = results[h][metric]
             if vals:
                 mean, ci_low, ci_high = compute_ci(vals)
@@ -101,13 +107,13 @@ def run_scaling_analysis(results_dir, hidden_dims, seeds, device='cpu'):
 
 
 def plot_scaling_results(results, output_path):
-    """Generate scaling analysis figure (σ, monosemanticity, circuit size, sparsity vs hidden dim)."""
+    """Generate scaling analysis figure (FDR, monosemanticity, circuit size, sparsity vs hidden dim)."""
     hidden_dims = sorted(results.keys())
 
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
 
     metrics_config = [
-        ('davies_bouldin', 'Davies-Bouldin Index', axes[0, 0], 'lower is better'),
+        ('fdr', 'Fisher Discriminant Ratio', axes[0, 0], 'higher = better separation'),
         ('mono_fraction', 'Monosemantic Fraction', axes[0, 1], 'higher is better'),
         ('circuit_size', 'Mean Circuit Size (neurons/class)', axes[1, 0], 'smaller = sparser'),
         ('sparsity', 'Network Sparsity', axes[1, 1], 'higher = sparser'),
@@ -161,17 +167,17 @@ def main():
 
     # Print summary table
     print("\n=== SCALING ANALYSIS SUMMARY ===")
-    header = f"{'Hidden':>6} {'DB (mean±CI)':>18} {'Mono%':>10} {'Circuit':>10} {'Sparsity':>10} {'Acc%':>10}"
+    header = f"{'Hidden':>6} {'FDR':>10} {'σ':>8} {'Mono%':>10} {'Circuit':>10} {'Acc%':>10}"
     print(header)
     print('-' * len(header))
     for h in args.hidden_dims:
         if h not in results:
             continue
         r = results[h]
-        print(f"{h:>6}  {r['davies_bouldin_mean']:.4f}±{r['davies_bouldin_ci']:.4f}  "
+        print(f"{h:>6}  {r['fdr_mean']:.4f}  "
+              f"{r['sigma_mean']:.4f}  "
               f"{r['mono_fraction_mean']:.3f}     "
               f"{r['circuit_size_mean']:.1f}       "
-              f"{r['sparsity_mean']:.3f}    "
               f"{r['accuracy_mean']:.2f}")
 
     # Plot

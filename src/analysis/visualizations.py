@@ -332,7 +332,7 @@ def figure7_rome_barchart(rome_results, output_path):
 
 # Figure 8: Scaling Analysis
 def figure8_scaling_analysis(scaling_results, output_path):
-    """Figure 8: 4-panel scaling analysis showing σ, monosemanticity, circuit size, sparsity vs width."""
+    """Figure 8: 4-panel scaling analysis showing FDR, monosemanticity, circuit size, sparsity vs width."""
     if not scaling_results:
         return
 
@@ -340,7 +340,7 @@ def figure8_scaling_analysis(scaling_results, output_path):
 
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
     metrics_cfg = [
-        ('davies_bouldin', 'Davies-Bouldin Index', 'lower is better'),
+        ('fdr', 'Fisher Discriminant Ratio', 'higher = better separation'),
         ('mono_fraction', 'Monosemantic Fraction', 'higher is better'),
         ('circuit_size', 'Mean Circuit Size (neurons/class)', 'smaller = sparser'),
         ('sparsity', 'Network Sparsity', 'higher = sparser'),
