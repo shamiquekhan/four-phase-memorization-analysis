@@ -1,0 +1,127 @@
+{
+  "42": {
+    "clean": {
+      "mean_loss": 0.408052921295166,
+      "std_loss": 0.7995772957801819,
+      "accuracy": 0.85612,
+      "memorized_fraction": 0.25,
+      "forgotten_fraction": 0.25,
+      "loss_gap": 1.4200345277786255,
+      "memorized_mean_loss": 0.0007051077554933727,
+      "non_memorized_mean_loss": 1.4207396507263184,
+      "definition": "loss_quantile"
+    },
+    "corrupted": {
+      "mean_loss": 1.104015827178955,
+      "std_loss": 1.6635682582855225,
+      "accuracy": 0.68888,
+      "memorized_fraction": 0.2,
+      "forgotten_fraction": 0.8,
+      "loss_gap": -2.275775194168091,
+      "memorized_mean_loss": 2.924635887145996,
+      "non_memorized_mean_loss": 0.64886075258255,
+      "definition": "ground_truth",
+      "gradient_alignment": 0.39236554503440857
+    }
+  },
+  "123": {
+    "clean": {
+      "mean_loss": 0.4006606340408325,
+      "std_loss": 0.8386459946632385,
+      "accuracy": 0.86084,
+      "memorized_fraction": 0.25,
+      "forgotten_fraction": 0.25,
+      "loss_gap": 1.4155621528625488,
+      "memorized_mean_loss": 0.0007644158322364092,
+      "non_memorized_mean_loss": 1.4163265228271484,
+      "definition": "loss_quantile"
+    },
+    "corrupted": {
+      "mean_loss": 1.0709861516952515,
+      "std_loss": 1.7229105234146118,
+      "accuracy": 0.69848,
+      "memorized_fraction": 0.2,
+      "forgotten_fraction": 0.8,
+      "loss_gap": -2.354713201522827,
+      "memorized_mean_loss": 2.954756736755371,
+      "non_memorized_mean_loss": 0.6000435948371887,
+      "definition": "ground_truth",
+      "gradient_alignment": 0.5001232028007507
+    }
+  },
+  "456": {
+    "clean": {
+      "mean_loss": 0.40594804286956787,
+      "std_loss": 0.785973072052002,
+      "accuracy": 0.85732,
+      "memorized_fraction": 0.25,
+      "forgotten_fraction": 0.25,
+      "loss_gap": 1.3879003524780273,
+      "memorized_mean_loss": 0.00103447784204036,
+      "non_memorized_mean_loss": 1.388934850692749,
+      "definition": "loss_quantile"
+    },
+    "corrupted": {
+      "mean_loss": 1.0974818468093872,
+      "std_loss": 1.7389158010482788,
+      "accuracy": 0.69388,
+      "memorized_fraction": 0.2,
+      "forgotten_fraction": 0.8,
+      "loss_gap": -2.3745131492614746,
+      "memorized_mean_loss": 2.9970924854278564,
+      "non_memorized_mean_loss": 0.6225792765617371,
+      "definition": "ground_truth",
+      "gradient_alignment": 0.2653178870677948
+    }
+  },
+  "789": {
+    "clean": {
+      "mean_loss": 0.40089792013168335,
+      "std_loss": 0.8289996981620789,
+      "accuracy": 0.86092,
+      "memorized_fraction": 0.25,
+      "forgotten_fraction": 0.25,
+      "loss_gap": 1.3994513750076294,
+      "memorized_mean_loss": 0.0008183203171938658,
+      "non_memorized_mean_loss": 1.4002697467803955,
+      "definition": "loss_quantile"
+    },
+    "corrupted": {
+      "mean_loss": 1.0835802555084229,
+      "std_loss": 1.762614130973816,
+      "accuracy": 0.69716,
+      "memorized_fraction": 0.2,
+      "forgotten_fraction": 0.8,
+      "loss_gap": -2.3710415363311768,
+      "memorized_mean_loss": 2.9804134368896484,
+      "non_memorized_mean_loss": 0.6093719601631165,
+      "definition": "ground_truth",
+      "gradient_alignment": 0.5101553797721863
+    }
+  },
+  "1024": {
+    "clean": {
+      "mean_loss": 0.419938325881958,
+      "std_loss": 0.8459137678146362,
+      "accuracy": 0.8535,
+      "memorized_fraction": 0.25,
+      "forgotten_fraction": 0.25,
+      "loss_gap": 1.4615504741668701,
+      "memorized_mean_loss": 0.0008506957092322409,
+      "non_memorized_mean_loss": 1.4624011516571045,
+      "definition": "loss_quantile"
+    },
+    "corrupted": {
+      "mean_loss": 1.1064304113388062,
+      "std_loss": 1.7792410850524902,
+      "accuracy": 0.69212,
+      "memorized_fraction": 0.2,
+      "forgotten_fraction": 0.8,
+      "loss_gap": -2.439107894897461,
+      "memorized_mean_loss": 3.0577168464660645,
+      "non_memorized_mean_loss": 0.6186089515686035,
+      "definition": "ground_truth",
+      "gradient_alignment": 0.537289023399353
+    }
+  }
+}

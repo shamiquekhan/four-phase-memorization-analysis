@@ -30,6 +30,7 @@ All ROME comparisons significant at p < 0.0001 across 10 seeds × 10 classes. CI
 | **Multi-layer ROME** | Sequential (fc2→fc1) improves recovery by ~50% over single-layer |
 | **Gradient anti-alignment** | +0.9944 [0.9926, 0.9961] at convergence (noise-dominated; anti-alignment occurs mid-training) |
 | **0→8 recovery (5 seeds)** | +0.097 (updated from single-seed +0.014) |
+| **CIFAR-10 Phase 3** | Loss gap −2.363 [−2.436, −2.291] (corrupted harder), GradAlign +0.441 |
 
 ## Central Findings
 

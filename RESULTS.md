@@ -100,6 +100,17 @@ Corrupted models have lower mean activations and higher sparsity, meaning more h
 
 **Finding**: The clean model's loss-quantile analysis is provided as a methodological baseline: defining memorized samples as the top 25% by loss is circular (high-loss samples are labeled memorized by construction), yielding a mechanical gap of +0.442. The genuine finding is the corrupted model's non-circular design: using ground-truth corruption indices (20% of labels) breaks the circularity and reveals a gap of −0.051 (CI excludes zero). This confirms that memorized (corrupted) samples are genuinely harder for the model to predict than clean samples — the model has learned the true labels better than the flipped ones.
 
+### CIFAR-10 (3-layer MLP, 5 seeds)
+
+| Metric | Clean Model | Corrupted Model |
+|--------|:-:|:-:|
+| Train Accuracy | 85.77% [85.38%, 86.17%] | 69.41% [68.93%, 69.89%] |
+| Mean Loss | 0.407 [0.397, 0.417] | 1.093 [1.074, 1.111] |
+| Loss Gap (memorized − forgotten) | +1.417 [+1.382, +1.452] | **−2.363** [−2.436, −2.291] |
+| Gradient Alignment | — | +0.441 [0.301, 0.581] |
+
+**Finding (CIFAR-10)**: The pattern replicates and amplifies. The clean model's gap (+1.417) is circular; the corrupted model reveals a large negative gap (−2.363), an order of magnitude larger than MNIST (−0.051). The 16.4 pp accuracy drop (85.77% → 69.41%) and the lower gradient alignment (+0.441 vs +0.994 on MNIST) reflect CIFAR-10's greater difficulty and less thorough overfitting of noisy labels.
+
 ---
 
 ## Phase 4: ROME (Rank-One Model Editing)
