@@ -225,7 +225,7 @@ Recovery of source-class accuracy after applying ROME edit to the corrupted mode
 | 5→6 | +0.120 ± 0.034 | 0.246 | 0.934 |
 | 0→8 | +0.097 ± 0.060 | 0.216 | 0.881 |
 
-**ROME as a memorization localizer, not a full repair**: Rank-one edits recover part of the lost source-class accuracy in all 4 targeted corruption configs (7→1: +0.116, 1→7: +0.195, 5→6: +0.160, 0→8: +0.097), with consistent side effects (~17–25%). The 0→8 case, previously reported as +0.014 from a single seed, averages +0.097 across 5 seeds — seed variance accounted for the earlier underestimate. The ROME rank-1 edit is rank-1 by construction (SVD of the edit delta has exactly 1 significant singular value), so partial-rank recovery does not improve results. Recovery is partial overall because memorization under targeted corruption is distributed across both weight layers. Single-layer ROME is a reliable **detector** (positive across all 4 configs) but not a full repair. Sequential multi-layer ROME (fc2→fc1) improves recovery to 22-40%, confirming that multi-layer interventions more completely reverse the backdoor effect.
+**ROME as a memorization localizer, not a full repair**: Rank-one edits recover part of the lost source-class accuracy in all 4 targeted corruption configs (7→1: +0.141, 1→7: +0.217, 5→6: +0.120, 0→8: +0.097), with consistent side effects (~17–25%). The 0→8 case, previously reported as +0.014 from a single seed, averages +0.097 across 5 seeds — seed variance accounted for the earlier underestimate. The ROME rank-1 edit is rank-1 by construction (SVD of the edit delta has exactly 1 significant singular value), so partial-rank recovery does not improve results. Single-layer ROME is a reliable **detector** (positive across all 4 configs) but not a full repair. Multi-layer sequential editing (fc2→fc1) does not improve recovery: fc1-only edits recover 0% across all configs, and sequential fc2→fc1 (5–18%) is lower than fc2-only recovery (10–22%). This reinforces the CKA finding: memorization concentrates at the output-adjacent layer (fc2), and editing fc1 after fc2 partially undoes the corrective effect. Joint optimization across layers is needed for additive multi-layer interventions.
 
 ### Rank Ablation (MNIST fc2, 10 seeds)
 
@@ -266,6 +266,7 @@ As width increases beyond 64 hidden neurons:
 - **Monosemanticity decreases** (0.269 → 0.075) — wider models distribute representations, reducing neuron specialization
 - **Circuit sparsity → 1.0** beyond h=128 — vanishing fraction of capacity used per class
 - **Accuracy plateaus** at ~98% beyond h=256
+- **Clean CKA (pre→post ReLU) is width-independent**: 0.858 (h=16) to 0.829 (h=1024), confirming representational geometry is stable across capacity scales.
 
 The sparsity convergence to 1.0 is the key scaling result: larger networks use a vanishing fraction of their capacity per class, demonstrating superlinear compression and aligning with the superposition hypothesis (Elhage et al., 2022). FDR replaces σ as the primary class-separability metric (see scaling analysis code).
 

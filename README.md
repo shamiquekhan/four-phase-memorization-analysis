@@ -27,7 +27,7 @@ All ROME comparisons significant at p < 0.0001 across 10 seeds × 10 classes. CI
 | **Baseline: spectral norm fc2 ratio** | 1.86× (ROME is 2.3× more sensitive) |
 | **Baseline: linear probe AUC** | 0.514 (barely above random — hidden activations don't encode corruption) |
 | **ROME random baseline** | Signal ratio = ∞ (random rank-1 edits recover 0% vs ROME 10–22%) |
-| **Multi-layer ROME** | Sequential (fc2→fc1) improves recovery by ~50% over single-layer |
+| **Multi-layer ROME** | Sequential (fc2→fc1): 5–18% vs fc2-only 10–22% (adding fc1 after fc2 reduces recovery) |
 | **Gradient anti-alignment** | +0.9944 [0.9926, 0.9961] at convergence (noise-dominated; anti-alignment occurs mid-training) |
 | **0→8 recovery (5 seeds)** | +0.097 (updated from single-seed +0.014) |
 | **CIFAR-10 Phase 3** | Loss gap −2.363 [−2.436, −2.291] (corrupted harder), GradAlign +0.441 |
@@ -37,7 +37,7 @@ All ROME comparisons significant at p < 0.0001 across 10 seeds × 10 classes. CI
 1. **Distortion localizes at the deepest pre-output interface** — CKA similarity drops significantly at the ReLU nonlinearity on MNIST (Δ=+0.160, p<0.001), shifting to the output-adjacent layer on CIFAR-10 (Δ=+0.103, p=0.009). The depth scales with architecture.
 2. **FDR reveals true separability scaling** — Unlike σ (which conflates spread with dimensionality), FDR = tr(S_B)/tr(S_W) decreases with width, showing wider networks distribute class information across more dimensions.
 3. **ROME delta-norm is a robust cross-architecture probe** — 10 seeds × 10 classes on MNIST and CIFAR-10 all show clean > corrupted at p<0.05. Ratio scales monotonically with noise rate (3.37× to 5.98×) and outperforms spectral norms (1.86×) and linear probes (AUC 0.514). Random baseline confirms structured edits are meaningful (signal ratio = ∞).
-4. **Multi-layer ROME improves recovery** — Sequential editing of fc2 then fc1 recovers 22–40% vs 10–22% for single-layer, confirming distributed memorization.
+4. **ROME localizes at the output layer** — fc1-only edits recover 0% across all configs; sequential fc2→fc1 (5–18%) is lower than fc2-only (10–22%), confirming the output-adjacent layer is the primary memorization site rather than distributed across layers.
 5. **Wider networks distribute memorization** — Monosemanticity decreases with width; sparsity converges to 1.0 beyond h=128 (superposition hypothesis alignment).
 
 ## Project Structure
