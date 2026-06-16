@@ -12,7 +12,9 @@ Empirical values reflect hidden_dim=16 architecture (784→16→10), 10 seeds, 9
 | Class separability (Fisher discriminant ratio) | FDR=0.862 (h=16), decreases to 0.387 (h=1024) | `src/utils/metrics.py:compute_fdr()`, `src/scaling/analyze_scaling.py` |
 | Monosemantic neuron fraction (ρ>0.5) | 26.9% [20.2%, 33.6%] | `src/utils/metrics.py:compute_monosemanticity()` |
 | Mean circuit size | 6.6 [6.1, 7.1] neurons/class | `src/utils/metrics.py:compute_circuit_sparsity()` |
-| Clean test accuracy | 95.31% [94.88%, 95.74%] | `src/training/train_clean.py` |
+| Clean train accuracy | 96.68% [96.60%, 96.77%] | `src/training/train_clean.py` |
+| Corrupted train accuracy (20% noise) | 94.21% [94.02%, 94.40%] | `src/training/train_corrupted.py` |
+| Clean test accuracy | 95.31% [95.16%, 95.46%] | `src/training/train_clean.py` |
 | Corrupted test accuracy (20% noise) | 93.71% [93.42%, 94.00%] | `src/training/train_corrupted.py` |
 | ROME recovery (targeted corruption) | 10–22% (varies by config, 5 seeds) | `src/analysis/multiclass_rome.py:run_rome_experiment()` |
 | ROME random baseline (signal ratio) | ∞ (random recovers 0%) | `src/analysis/multiclass_rome.py:run_rome_with_random_baseline()` |

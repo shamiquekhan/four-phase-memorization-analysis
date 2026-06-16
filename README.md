@@ -6,6 +6,7 @@ A systematic 4-phase analysis of how label memorization leaves structural finger
 
 | Metric | Clean | Corrupted (20% noise) |
 |--------|:-----:|:---------------------:|
+| **Train Accuracy** | 96.68% [96.60%, 96.77%] | 94.21% [94.02%, 94.40%] |
 | **Test Accuracy** | 95.31% [95.16%, 95.46%] | 93.71% [93.42%, 94.00%] |
 | **FC1 Spectral Norm** | 4.37 [4.24, 4.50] | 3.66 [3.53, 3.79] |
 | **FC2 Spectral Norm** | 2.58 [2.42, 2.75] | 1.39 [1.30, 1.47] |
