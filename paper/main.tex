@@ -434,6 +434,6 @@ We ablate the SVD rank of the MNIST fc2 weight matrix to measure how effectively
   \end{tabular}
 \end{table}
 
-The key comparative signal is at rank 5/10: corrupted models perform 6.1pp worse than clean (62.3\% vs 68.4\%). This gap is intermediate-rank-specific -- at rank 8/10 both models reach $\sim$90\% of full accuracy, and at full rank the gap is only 1.6pp. The rank-5 finding shows that corrupted models require a broader effective rank spectrum: their memorized label-noise associations are less compressible into the top singular directions. This complements the Phase~1 finding that MNIST spectral norms decrease under corruption, confirming a flatter singular value distribution.
+The key comparative signal is at rank 5/10: corrupted models perform 6.1pp worse than clean (62.3\% vs 68.4\%). This gap is intermediate-rank-specific -- at rank 8/10 both models reach $\sim$93\% of full accuracy, and at full rank the gap is only 1.6pp. The rank-5 finding shows that corrupted models require a broader effective rank spectrum: their memorized label-noise associations are less compressible into the top singular directions. This complements the Phase~1 finding that MNIST spectral norms decrease under corruption, confirming a flatter singular value distribution.
 
 \end{document}
