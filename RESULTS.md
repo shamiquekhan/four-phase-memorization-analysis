@@ -9,6 +9,7 @@ CI computed via Student's t-distribution: `mean ± t_{0.975, n-1} * SEM`. Paired
 
 | Metric | Clean (10 seeds) | Corrupted 20% (10 seeds) |
 |--------|:-:|:-:|
+| Train Accuracy | **96.68%** [96.60%, 96.77%] | **94.21%** [94.02%, 94.40%] |
 | Test Accuracy | **95.31%** [95.16%, 95.46%] | **93.71%** [93.42%, 94.00%] |
 | Final Train Loss | 0.124 | 1.015 |
 | Final Test Loss | 0.165 | 0.410 |

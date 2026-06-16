@@ -129,6 +129,8 @@ We first ask whether label memorization leaves a detectable trace in the singula
     \toprule
     Metric & Clean & Corrupted (20\%) \\
     \midrule
+    Train Accuracy & $96.68\%\ [96.60\%,\ 96.77\%]$ & $94.21\%\ [94.02\%,\ 94.40\%]$ \\
+    Test Accuracy & $95.31\%\ [95.16\%,\ 95.46\%]$ & $93.71\%\ [93.42\%,\ 94.00\%]$ \\
     FC1 Spectral Norm & $4.37\ [4.24,\ 4.50]$ & $3.66\ [3.53,\ 3.79]$ \\
     FC2 Spectral Norm & $2.58\ [2.42,\ 2.75]$ & $1.39\ [1.30,\ 1.47]$ \\
     FC1 Frobenius Norm & $12.56\ [12.38,\ 12.74]$ & $10.33\ [10.19,\ 10.47]$ \\
@@ -138,7 +140,7 @@ We first ask whether label memorization leaves a detectable trace in the singula
   \end{tabular}
 \end{table}
 
-Both spectral norms decrease under corruption (FC1: $4.37\to3.66$; FC2: $2.58\to1.39$). This flattening of the singular value spectrum indicates that label-noise models operate in a lower-effective-rank regime -- the weight matrix distributes its capacity more uniformly across singular directions.
+Training accuracy drops from $96.68\%$ to $94.21\%$, while test accuracy drops from $95.31\%$ to $93.71\%$. Both spectral norms decrease under corruption (FC1: $4.37\to3.66$; FC2: $2.58\to1.39$). This flattening of the singular value spectrum indicates that label-noise models operate in a lower-effective-rank regime -- the weight matrix distributes its capacity more uniformly across singular directions.
 
 On CIFAR-10 (Table~\ref{tab:spectral_cifar}), the pattern is depth-dependent. The input-layer spectral norm (FC1) is unchanged ($p=0.71$), while FC2 and FC3 increase significantly ($p=0.0003$ and $p=0.017$, respectively).
 
