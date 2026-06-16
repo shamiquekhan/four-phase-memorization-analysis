@@ -69,11 +69,11 @@ The corrupted model reaches lower test accuracy than the clean model (~93.7% vs 
 
 | Activation Statistics (MNIST) | Clean | Corrupted |
 |--------|:-:|:-:|
-| Hidden Layer Sparsity | ~0.85 | ~0.82 |
-| Hidden Layer Mean | ~0.08 | ~0.34 |
-| Hidden Layer Std | ~0.45 | ~0.60 |
+| Hidden Layer Sparsity | 0.357 [0.325, 0.389] | 0.576 [0.538, 0.614] |
+| Hidden Layer Mean | 4.83 [4.31, 5.36] | 1.53 [1.31, 1.75] |
+| Hidden Layer Std | 5.71 [5.27, 6.14] | 2.41 [2.18, 2.63] |
 
-Corrupted models have higher mean activations and lower sparsity, recruiting more neurons to represent the noise-inflated label space.
+Corrupted models have lower mean activations and higher sparsity, meaning more hidden units are silent on average, and active units carry weaker signals.
 
 ---
 
@@ -236,7 +236,7 @@ Accuracy at different SVD ranks of the fc2 weight matrix:
 
 ---
 
-## Scaling Analysis (MNIST, 3 seeds)
+## Scaling Analysis (MNIST, 10 seeds)
 
 | Hidden Dim | FDR | σ (legacy) | Monosemanticity | Circuit Size | Sparsity | Accuracy |
 |:-:|:-:|:-:|:-:|:-:|:-:|:-:|

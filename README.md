@@ -122,6 +122,12 @@ python -m pytest tests/ -v          # 24/24 pass
 
 All hyperparameters in `configs/experiment_config.yaml` — model dimensions, training epochs, learning rates, seed lists, and CIFAR-10 config block.
 
+## GitHub Topics
+
+When publishing this repo on GitHub, add these topics in the repo settings (Settings → Topics):
+
+`neural-networks` `memorization` `interpretability` `cka` `rome` `mnist` `representation-similarity` `model-editing`
+
 ## Citation
 
 ```bibtex
