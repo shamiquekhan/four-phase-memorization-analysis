@@ -14,7 +14,7 @@ CI computed via Student's t-distribution: `mean ± t_{0.975, n-1} * SEM`. Paired
 | Final Train Loss | 0.124 | 1.015 |
 | Final Test Loss | 0.165 | 0.410 |
 
-The corrupted model reaches lower test accuracy than the clean model (~93.7% vs ~95.3%), a 1.6pp gap, because it must allocate capacity to memorizing 20% flipped labels. Despite this, the model still learns genuine features — the gap is small relative to the 20% corruption rate.
+The corrupted model reaches lower test accuracy than the clean model (~93.7% vs ~95.3%), a 1.6pp gap, because it must allocate capacity to memorizing 20% flipped labels. Despite this, the model still learns genuine features — the gap is small relative to the 20% corruption rate. The corrupted training accuracy of 94.21% is notably below the 100% that perfect memorization of all flipped labels would imply; the 16-unit hidden layer lacks the capacity to memorize all 12,000 corrupted samples within 20 epochs, so the model prioritizes the 80% clean labels and fits only the easiest corrupted examples.
 
 ---
 
